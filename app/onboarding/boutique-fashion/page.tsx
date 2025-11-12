@@ -61,5 +61,7 @@ export default function Page() {
     { name: "product_list", label: "Optional free-form product list (one per line)", type: "textarea", placeholder: "Title — $Price | short description" }
   ];
 
-  return <OnboardingForm slug="boutique-fashion" fields={fields} submitLabel="Save & Preview" />;
+  // TypeScript: OnboardingForm expects Field[]; build-time inference from the dynamic array can widen literal string types to 'string'
+  // which causes the strict type error during the build. Cast here to satisfy the component's prop type without changing runtime data.
+  return <OnboardingForm slug="boutique-fashion" fields={fields as unknown as any} submitLabel="Save & Preview" />;
 }
