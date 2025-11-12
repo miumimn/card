@@ -1,0 +1,244 @@
+/* Modern Contact page styles — glassy, cardy, responsive
+   Updated: improved select / topic placeholder visibility for dark mode
+*/
+
+/* Root layout */
+.contact-root {
+  --page-pad: 20px;
+  max-width: 1200px;
+  margin: 24px auto;
+  padding: 0 var(--page-pad) 48px;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  color: var(--text, #07121a);
+}
+
+/* Top controls */
+.top-controls {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.brand { display:flex; gap:12px; align-items:center; }
+.logo {
+  width:56px; height:56px; border-radius:12px;
+  background: linear-gradient(135deg,var(--accent,#06b6d4),var(--accent-2,#7c3aed));
+  color:#06101a; font-weight:900; display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 8px 30px rgba(99,102,241,0.08);
+}
+.brand-title { font-weight:800; font-size:16px; }
+.brand-sub { font-size:13px; color:var(--muted,#6b7280); }
+
+/* Theme toggle wrapper */
+.theme-toggle-wrap { margin-left: 12px; }
+
+/* Hero */
+.contact-hero { margin-bottom: 22px; }
+.hero-inner {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 10px 30px rgba(2,6,23,0.04);
+}
+.hero-copy { flex:1; min-width:0; }
+.hero-title { margin:0 0 8px; font-size:28px; letter-spacing:-0.3px; }
+.hero-lead { margin:0; color:var(--muted,#6b7280); line-height:1.5; }
+
+/* visual preview card: now using the actual image */
+.hero-visual { width:180px; display:flex; justify-content:center; align-items:center; }
+.card-image {
+  width:160px;
+  height:98px;
+  border-radius:12px;
+  object-fit:cover;
+  display:block;
+  box-shadow: 0 18px 60px rgba(99,102,241,0.10);
+  border: 1px solid rgba(0,0,0,0.06);
+  background: linear-gradient(90deg,var(--accent,#06b6d4),var(--accent-2,#7c3aed));
+}
+
+/* Main layout */
+.contact-main {
+  display:grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  align-items:start;
+}
+@media (max-width:980px) {
+  .hero-inner { flex-direction:column; align-items:flex-start; }
+  .contact-main { grid-template-columns: 1fr; }
+}
+
+/* Panels */
+.panel {
+  background: var(--card, #ffffff);
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid var(--border-weak, rgba(2,6,23,0.06));
+  box-shadow: 0 8px 32px rgba(2,6,23,0.04);
+}
+
+/* Form styles (modern) */
+.form-panel .panel-title { margin:0 0 12px; font-size:18px; }
+.contact-form { display:flex; flex-direction:column; gap:12px; }
+.row { display:flex; gap:12px; }
+.row.two { gap:12px; }
+.field { flex:1; display:flex; flex-direction:column; gap:8px; }
+.field.full { grid-column: 1 / -1; }
+.label { font-size:13px; color:var(--muted,#6b7280); font-weight:600; }
+
+/* Inputs */
+input, textarea, select {
+  width:100%;
+  padding:12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(11,18,29,0.06);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96));
+  font-size:15px;
+  color: var(--text, #07121a);
+  transition: box-shadow .18s ease, transform .12s ease, border-color .12s ease;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  box-shadow: 0 10px 30px rgba(99,102,241,0.08);
+  border-color: rgba(99,102,241,0.45);
+  transform: translateY(-1px);
+}
+textarea { min-height:140px; resize:vertical; }
+
+/* Placeholder color — visible in light & dark themes */
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted, #9fb1c1);
+  opacity: 1; /* ensure it's not faded */
+}
+
+/* Vendor prefixes for older browsers */
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder { color: var(--muted, #9fb1c1); opacity: 1; }
+input::-moz-placeholder,
+textarea::-moz-placeholder { color: var(--muted, #9fb1c1); opacity: 1; }
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder { color: var(--muted, #9fb1c1); opacity: 1; }
+input::-ms-input-placeholder,
+textarea::-ms-input-placeholder { color: var(--muted, #9fb1c1); opacity: 1; }
+
+/* If autofill changes color, make it legible (WebKit) */
+input:-webkit-autofill,
+textarea:-webkit-autofill {
+  -webkit-text-fill-color: var(--text, #07121a) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ---------------------------
+   SELECT / TOPIC VISIBILITY
+   ---------------------------
+   Improve visibility of the topic selector and its empty placeholder option
+   in dark mode and light mode. Uses theme-aware variables. Keeps native
+   behavior but ensures the "Select topic" hint is readable and the chosen
+   value shows with normal text color.
+*/
+
+/* Style the select element so it matches inputs, and allow room for a native arrow */
+.contact-form select {
+  padding-right: 40px; /* space for native arrow */
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96));
+  color: var(--text, #07121a);
+  border-radius: 10px;
+  border: 1px solid rgba(11,18,29,0.06);
+  cursor: pointer;
+}
+
+/* When no value is selected, keep the select hint muted but visible */
+.contact-form select:invalid {
+  color: var(--muted, #9fb1c1);
+}
+
+/* Ensure the empty option (placeholder) is muted too */
+.contact-form select option[value=""] {
+  color: var(--muted, #9fb1c1);
+}
+
+/* When an option is chosen, make sure the displayed text uses normal text color */
+.contact-form select:valid {
+  color: var(--text, #07121a);
+}
+
+/* Force options in the dropdown to use theme colors (not perfect cross-browser but helpful) */
+.contact-form select option {
+  background: var(--card, #ffffff);
+  color: var(--text, #07121a);
+}
+
+/* Add a subtle custom arrow using a small SVG data-uri for consistency across themes */
+.contact-form select {
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239fb1c1' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: right 12px center, center;
+  background-size: auto, 12px 8px;
+}
+
+/* In dark theme we want the select to contrast more strongly */
+html[data-theme="light"] .contact-form select {
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23717171' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+}
+html:not([data-theme="light"]) .contact-form select {
+  /* dark theme */
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239fb1c1' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-color: var(--card, #0d1723);
+  border: 1px solid var(--border-weak, rgba(255,255,255,0.06));
+  color: var(--text, #e6f2fb);
+}
+
+/* For small screens, ensure the select arrow and padding remain usable */
+@media (max-width:520px) {
+  .contact-form select { padding-right: 36px; background-position: right 10px center, center; }
+}
+
+/* Error visuals */
+.field-error { color:#ef4444; font-size:0.9rem; margin-top:6px; }
+.field-invalid { outline: 2px solid rgba(239,68,68,0.12); box-shadow: 0 6px 20px rgba(239,68,68,0.06); }
+
+/* Form message */
+.form-message { min-height:22px; color:var(--muted,#6b7280); font-size:14px; transition: all .18s ease; }
+.form-message.success { color: #16a34a; font-weight:700; }
+
+/* Buttons */
+.row.actions { display:flex; gap:12px; align-items:center; margin-top:6px; }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:10px; cursor:pointer; border: none; font-weight:700; }
+.btn-primary { background: linear-gradient(90deg,var(--accent,#06b6d4),var(--accent-2,#7c3aed)); color:#07101a; box-shadow: 0 12px 30px rgba(99,102,241,0.12); }
+.btn-primary.loading { opacity:0.7; transform:translateY(0); pointer-events:none; }
+.btn-ghost { background: transparent; border:1px solid rgba(11,18,29,0.06); color:var(--text,#07121a); padding:10px 12px; }
+
+/* Info panel */
+.info-panel .panel-title { margin:0 0 12px; font-size:16px; }
+.info-block { display:flex; gap:12px; align-items:flex-start; margin-bottom:12px; }
+.info-icon { width:44px; height:44px; border-radius:10px; background: linear-gradient(135deg,#eef6ff,#f9fbff); display:flex; align-items:center; justify-content:center; font-weight:700; box-shadow: 0 8px 20px rgba(2,6,23,0.04); }
+.info-title { font-weight:700; }
+.info-meta { color:var(--muted,#6b7280); margin-top:6px; font-size:14px; }
+
+/* Footer */
+.contact-footer { margin-top: 28px; text-align:center; color:var(--muted,#6b7280); font-size:14px; }
+
+/* Small helpers */
+.muted { color:var(--muted,#6b7280); font-size:13px; }
+.block { display:block; width:100%; text-align:center; }
+
+/* Subtle entrance */
+.panel, .hero-inner { transform: translateY(0); animation: fadeUp .36s ease both; }
+@keyframes fadeUp { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }

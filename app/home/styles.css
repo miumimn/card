@@ -1,0 +1,127 @@
+/* Mobile-first homepage styles for NexCard — advanced mobile UI updates */
+
+/* small helper: hide on sr-only */
+.sr-only { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; }
+
+/* Layout helpers */
+.nx-container { padding: 0 16px; margin: 0 auto; max-width: var(--max-width); }
+.nx-section { padding: 28px 0; }
+
+/* Header */
+.nx-header { background: var(--header-bg); border-bottom: 1px solid var(--header-border); position: sticky; top: 0; z-index: 60; }
+.nx-header-inner { display:flex; align-items:center; justify-content:space-between; padding: 10px 0; gap: 8px; }
+.nx-brand { display:flex; gap:10px; align-items:center; text-decoration:none; color:var(--header-text); min-width:0; }
+.nx-logo { width:52px; height:52px; border-radius:10px; object-fit:cover; display:block; }
+.nx-brand-title { font-weight:800; font-size:18px; color:var(--header-text); display:none; /* hide text on small screens */ }
+
+/* Desktop brand text appears on larger screens */
+@media(min-width:720px) { .nx-brand-title { display:inline-block; } }
+
+/* Desktop nav visible only on larger screens */
+.nx-nav-desktop { display:none; gap:8px; align-items:center; }
+@media(min-width:720px) { .nx-nav-desktop { display:flex; } }
+
+/* Hamburger for mobile */
+.nx-hamburger {
+  width:44px; height:44px; border-radius:10px; border:1px solid var(--border-weak); background: transparent; display:flex;
+  align-items:center; justify-content:center; padding:8px; cursor:pointer; position:relative;
+}
+.nx-hamburger .nx-hamburger-bar { width:18px; height:2px; background:var(--header-text); display:block; margin:3px 0; transition: transform .22s ease, opacity .18s ease; }
+.nx-hamburger .nx-hamburger-bar.open:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.nx-hamburger .nx-hamburger-bar.open:nth-child(2) { opacity: 0; transform: scaleX(.2); }
+.nx-hamburger .nx-hamburger-bar.open:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+/* Slide-up panel */
+.nx-mobile-panel {
+  position: fixed; left: 0; right: 0; bottom: 0; height: 0; pointer-events: none; overflow: hidden;
+  transition: height .32s cubic-bezier(.2,.9,.2,1), opacity .22s ease;
+  background: linear-gradient(180deg, #fff, #fff); color: var(--header-text); z-index: 70;
+  border-top-left-radius: 12px; border-top-right-radius: 12px;
+  box-shadow: 0 -20px 40px rgba(2,6,23,0.08);
+}
+.nx-mobile-panel-open { height: 60vh; pointer-events: auto; }
+.nx-mobile-panel-inner { padding: 12px 16px; display:flex; flex-direction:column; gap:12px; height:100%; }
+.nx-mobile-panel-header { display:flex; align-items:center; justify-content:space-between; }
+.nx-mobile-brand { display:flex; gap:10px; align-items:center; }
+.nx-mobile-logo { width:44px; height:44px; border-radius:8px; object-fit:cover; }
+.nx-panel-close { border: none; background: transparent; font-size:22px; cursor:pointer; color:var(--header-text); }
+
+/* backdrop */
+.nx-panel-backdrop { position: fixed; inset: 0; background: rgba(2,6,23,0); pointer-events: none; transition: background .22s ease; z-index: 65; }
+.nx-panel-backdrop-open { background: rgba(2,6,23,0.36); pointer-events: auto; }
+
+/* Mobile links in panel */
+.nx-mobile-links { display:flex; flex-direction:column; gap:10px; overflow:auto; padding-bottom: 16px; }
+.nx-mobile-link { padding: 12px 14px; border-radius: 10px; background: linear-gradient(180deg, rgba(0,0,0,0.02), transparent); color: var(--header-text); text-decoration: none; font-weight:700; }
+.nx-mobile-cta { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color: #fff; }
+
+/* Hero */
+.nx-hero { padding: 22px 0; background: linear-gradient(180deg, rgba(6,16,26,0.02), transparent); position: relative; }
+.nx-hero-inner { display:flex; flex-direction:column; gap:18px; align-items: stretch; }
+.nx-hero-left { flex:1; }
+.nx-eyebrow { font-size:12px; color:var(--accent-2); font-weight:700; letter-spacing: .6px; margin-bottom:6px; }
+.nx-title { font-size:26px; margin:0 0 8px; line-height:1.05; color:var(--text); font-weight:900; }
+.nx-desc { margin:0 0 14px; color:var(--muted); }
+
+/* Inline form — expanded on mobile */
+.nx-inline-form { display:flex; gap:8px; width:100%; margin-bottom:12px; flex-wrap:nowrap; }
+.nx-input { flex:1; padding:14px 14px; border-radius:12px; border:1px solid rgba(7,18,26,0.06); background:var(--card); color:var(--text); font-size:15px; outline:none; }
+.nx-cta { display:inline-flex; align-items:center; justify-content:center; border:none; cursor:pointer; padding: 14px 14px; border-radius:12px; font-weight:800; }
+
+/* Links */
+.nx-hero-links { display:flex; gap:12px; margin-top:8px; }
+.nx-link { color:var(--muted); font-weight:700; text-decoration: none; }
+.nx-link-strong { color:var(--accent-2); font-weight:800; }
+
+/* compact stats */
+.nx-compact-meta { display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; }
+.nx-stat { display:flex; flex-direction:column; gap:2px; color:var(--muted); font-size:13px; }
+.nx-stat strong { color:var(--text); }
+
+/* Right preview card (on mobile it sits under hero) */
+.nx-hero-right { display:block; margin-top: 8px; }
+.nx-card-preview { width:100%; border-radius:12px; overflow:hidden; background:var(--card); box-shadow: 0 10px 30px rgba(2,6,23,0.35); border: 1px solid var(--border-weak); }
+.nx-card-topbar { display:flex; align-items:center; justify-content:space-between; padding:12px; }
+.nx-card-logo.small { width:38px; height:38px; border-radius:8px; object-fit:cover; }
+.nx-card-body { padding:14px; text-align:center; }
+.nx-avatar { width:74px; height:74px; border-radius:16px; margin:0 auto 8px; background-size:cover; background-position:center; }
+.nx-card-name { margin:8px 0 0; color:var(--text); font-weight:800; }
+.nx-card-role { margin:4px 0 8px; color:var(--muted); font-size:13px; }
+.nx-links { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+.nx-link-card { background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); color:var(--text); padding:10px; border-radius:10px; text-decoration:none; font-weight:700; }
+
+/* Features (single column on mobile) */
+.nx-features { display:grid; grid-template-columns: 1fr; gap:12px; margin-top:16px; }
+.nx-feature-card { display:flex; gap:12px; align-items:flex-start; padding:12px; border-radius:10px; background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent); }
+.nx-feature-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; background:var(--glass); color:var(--text); font-weight:700; }
+.nx-feature-title { margin:0 0 6px; font-size:16px; color:var(--text); }
+.nx-feature-desc { margin:0; color:var(--muted); }
+
+/* CTA large */
+.nx-cta-large { text-align:center; padding:36px 0; background: linear-gradient(180deg, rgba(6,16,26,0.02), transparent); }
+.nx-cta-row { display:flex; gap:12px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
+.nx-cta-outline { background: transparent; border: 1px solid var(--border-weak); color:var(--text); padding:10px 14px; border-radius:10px; }
+
+/* Footer */
+.nx-footer { border-top: 1px solid var(--border-weak); background: transparent; padding: 20px 0; }
+.nx-footer-inner { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+
+/* Sticky bottom CTA on mobile */
+.nx-sticky-cta {
+  position: fixed; left: 12px; right: 12px; bottom: 16px; display:flex; gap:10px;
+  z-index: 80; justify-content: center; align-items: center;
+  pointer-events: auto;
+}
+.nx-sticky-btn { flex:1; padding:12px 14px; border-radius: 12px; text-align:center; font-weight:800; text-decoration:none; }
+.nx-cta-lg { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color: #fff; }
+@media(min-width:720px) {
+  .nx-sticky-cta { display: none; }
+}
+
+/* Responsive desktop layout */
+@media (min-width: 880px) {
+  .nx-hero-inner { flex-direction: row; align-items: flex-start; gap: 28px; }
+  .nx-hero-left { flex: 1 1 58%; }
+  .nx-hero-right { flex:1 1 38%; margin-top:0; }
+  .nx-features { grid-template-columns: repeat(2,1fr); }
+}

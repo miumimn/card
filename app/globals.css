@@ -1,0 +1,335 @@
+@import "tailwindcss";
+
+/*
+  Updated globals.css — preserved all layout and utility rules but refined the color system.
+  Changes:
+  - Tuned primary dark palette for better legibility and refined accents.
+  - Added header-specific variables and CSS so the header can remain white with dark controls
+    (overrides inline styles safely using !important).
+  - Kept all original selectors and layout rules intact; only color variables and a few header-scoped
+    rules were added/adjusted to improve overall contrast and consistency.
+*/
+
+/* PRIMARY PALETTE (used across templates) */
+:root {
+  /* Dark theme (default) */
+  --bg: #071021;               /* page background (deep navy) */
+  --card: #0d1723;             /* cards / panels (slightly lighter for separation) */
+  --text: #e6f2fb;             /* main text (soft white for readability) */
+  --muted: #9fb1c1;            /* secondary text */
+  --accent: #06b6d4;           /* primary accent (teal/cyan) */
+  --accent-2: #7c3aed;         /* secondary accent (purple) */
+  --glass: rgba(255,255,255,0.04);
+  --border-weak: rgba(255,255,255,0.06);
+  --radius: 14px;
+  --max-width: 1100px;
+  --gap: 14px;
+
+  /* Header-specific defaults (so header can be forced white while theme remains dark) */
+  --header-bg: #ffffff;        /* header background color (white) */
+  --header-text: #07121a;      /* header text / controls color (dark) */
+  --header-border: rgba(17, 43, 61, 0.06);
+}
+
+/* Light theme overrides — applied when <html data-theme="light"> */
+html[data-theme="light"] {
+  --bg: #f7fafc;
+  --card: #ffffff;
+  --text: #07121a;
+  --muted: #55606a;
+  --accent: #0ea5a4;
+  --accent-2: #7c3aed;
+  --glass: rgba(7,18,26,0.03);
+  --border-weak: rgba(7,18,26,0.06);
+
+  /* header variables for light theme (keeps header white but text remains dark) */
+  --header-bg: #ffffff;
+  --header-text: #07121a;
+  --header-border: rgba(7,18,26,0.06);
+}
+
+/* Mobile-first base */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg, var(--bg), var(--bg));
+  color: var(--text);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+a { color: inherit; text-decoration: none; }
+
+/* === Header scoping: force a white header with dark controls ===
+   Because the layout previously sets header background inline to white,
+   and there are some inline color styles (var(--text)), we enforce
+   header color tokens here and use !important so the header looks
+   consistent across themes and the header text/buttons are readable.
+*/
+header {
+  background: var(--header-bg) !important;
+  border-bottom: 1px solid var(--header-border) !important;
+  color: var(--header-text) !important;
+}
+
+/* Make sure header controls (links, buttons) use the header text color */
+header a,
+header a * ,
+header button,
+header button * {
+  color: var(--header-text) !important;
+}
+
+/* Style header ghost/primary buttons specifically so they look correct on white */
+header .btn-ghost {
+  background: transparent !important;
+  color: var(--header-text) !important;
+  border: 1px solid var(--header-border) !important;
+}
+header .btn-primary {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2)) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.08);
+}
+
+/* Keep app wrapper rules */
+.app .wrap { max-width: 480px; margin: 24px auto; padding: 16px; }
+.header { position: relative; }
+.header .title { font-size: 18px; margin: 0; color: var(--text); }
+.header .subtitle { font-size: 13px; margin: 6px 0 16px; color: var(--muted); }
+
+/* Logo for select template page (top-right, small, object-fit contain) */
+.header-select .select-logo{
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  padding: 6px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+}
+
+/* Grid of templates */
+.grid { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+.card { background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; align-items: start; gap: 8px; color: var(--text); }
+.card-thumbnail { width: 100%; height: 72px; border-radius: 8px; background-size: cover; background-position: center; position: relative; overflow: hidden; }
+.card-thumbnail::after {
+  /* subtle, consistent overlay for legibility */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1000px rgba(2,6,23,0.06);
+  pointer-events: none;
+}
+
+/* Default thumbs (existing) — preserved */
+.thumb-photographer{background-image:linear-gradient(45deg, rgba(0,0,0,0.2), rgba(0,0,0,0.1)), url('https://picsum.photos/id/1011/800/400')}
+.thumb-realtor{background-image:linear-gradient(45deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06)), url('https://picsum.photos/id/1032/800/400')}
+.thumb-developer{background-image:linear-gradient(45deg, rgba(0,0,0,0.18), rgba(0,0,0,0.04)), url('https://picsum.photos/id/1005/800/400')}
+.thumb-artist{background-image:linear-gradient(45deg, rgba(255,120,90,0.06), rgba(0,0,0,0.04)), url('https://picsum.photos/id/1041/800/400')}
+.thumb-jobseeker{background-image:linear-gradient(45deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04)), url('https://picsum.photos/id/1001/800/400')}
+.thumb-musician{background-image: linear-gradient(45deg, rgba(186,85,211,0.06), rgba(0,0,0,0.04)), url('https://picsum.photos/id/1021/800/400')}
+.thumb-normal{background-image:linear-gradient(45deg, rgba(0,128,255,0.06), rgba(0,0,0,0.04)), url('https://picsum.photos/id/1019/800/400')}
+
+/* Card page general */
+.card-page { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 20px; }
+.card-wrap { width: 100%; max-width: var(--max-width); background: var(--card); border-radius: 18px; padding: 18px; box-shadow: 0 6px 30px rgba(2,6,23,0.7); color: var(--text); }
+.hero { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding-bottom: 8px; border-bottom: 1px solid var(--border-weak); }
+.avatar { width: 110px; height: 110px; border-radius: 20px; background-size: cover; background-position: center; box-shadow: 0 6px 18px rgba(0,0,0,0.6); }
+.name { font-size: 20px; margin: 6px 0 0; color: var(--text); }
+.role { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* Social row (SVG icons horizontally) */
+.social-row { display: flex; gap: 12px; margin-top: 6px; }
+.social { width: 44px; height: 44px; border-radius: 10px; background: var(--glass); display: inline-flex; align-items: center; justify-content: center; color: var(--text); }
+.icon { width: 20px; height: 20px; display: block; }
+
+/* Tabs */
+.tabs { display: flex; gap: 8px; margin-top: 12px; }
+.tab { flex: 1; padding: 8px; border-radius: 10px; background: transparent; border: 1px solid var(--border-weak); color: var(--muted); font-weight: 600; font-size: 13px; }
+.tab.active { background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #06101a; border: none; box-shadow: 0 8px 20px rgba(6,16,26,0.4); }
+
+/* Panels */
+.tab-panels { padding: 14px 6px; }
+.panel { display: none; color: var(--text); }
+.panel.active { display: block; }
+.panel h3 { margin: 0 0 8px; font-size: 16px; }
+.panel p { color: var(--muted); margin: 0 0 12px; }
+
+/* Gallery grid */
+.gallery { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+.gallery img { width: 100%; height: auto; border-radius: 10px; display: block; object-fit: cover; }
+
+/* Mosaic for artist */
+.gallery.mosaic { grid-template-columns: 1fr 1fr; grid-auto-rows: 120px; }
+.gallery.mosaic img { height: 100%; width: 100%; object-fit: cover; border-radius: 8px; }
+
+/* Lists */
+.timeline, .project-list, .listings, .resume { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.listing { display: flex; gap: 10px; background: rgba(255,255,255,0.02); border-radius: 10px; overflow: hidden; color: var(--text); }
+.listing img { width: 120px; height: 80px; object-fit: cover; }
+.listing-meta { padding: 8px; }
+
+/* Buttons */
+.primary-btn { display: inline-block; padding: 10px 16px; border-radius: 10px; background: var(--accent); color: #06101a; font-weight: 700; }
+
+/* Theming variations (kept as helpers) */
+.theme-dark { --card: #06111a; --text: #e8f0f8; --muted: #9fb0c2; --accent: #ff7a64; --accent-2: #ffd36b; }
+.theme-light { background: linear-gradient(180deg,#f7fafc,#eef5f8); --card: #ffffff; --text: #07121a; --muted: #536179; --accent: #2bb673; --accent-2: #2b9cff; }
+.theme-accent { --card: linear-gradient(180deg, rgba(255,240,230,0.04), rgba(0,0,0,0.04)); --accent: #b06cff; --accent-2: #ff8aa2; }
+.theme-clean { --card: #ffffff; --text: #07121a; --muted: #586b78; --accent: #0ea5a4; --accent-2: #06b6d4; }
+
+/* Layout differences for some templates */
+.realtor-layout .avatar { border-radius: 12px; }
+.developer-layout .avatar { border-radius: 999px; }
+.artist-layout .avatar { border-radius: 12px; box-shadow: 0 8px 20px rgba(176,108,255,0.12); }
+.job-layout .avatar { border-radius: 18px; }
+
+/* Musician additions */
+.theme-music {
+  --card: linear-gradient(180deg, rgba(8,6,11,0.6), rgba(18,8,28,0.6));
+  --text: #fff6ff;
+  --muted: #d6c6da;
+  --accent: #b06cff;
+  --accent-2: #ff8aa2;
+}
+.musician-layout .avatar { width: 120px; height: 120px; border-radius: 999px; box-shadow: 0 12px 30px rgba(176,108,255,0.12); }
+.musician-layout .role { color: var(--muted); }
+.musician-layout .mini-info { display: flex; gap: 16px; justify-content: center; margin-top: 8px; }
+.musician-layout .mini-info .muted { color: var(--muted); margin: 4px 0 0; font-size: 13px; }
+.track-list { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-direction: column; gap: 10px; }
+.track-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.02); }
+.track-meta { display: flex; gap: 8px; align-items: center; }
+.track-meta .muted { color: var(--muted); font-size: 13px; }
+.track-actions { display: flex; gap: 8px; align-items: center; }
+.play-btn { background: var(--accent); color: #06101a; border: none; padding: 8px; border-radius: 10px; font-weight: 700; }
+.link { font-size: 13px; color: var(--accent-2); text-decoration: none; }
+.cta-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+.primary-btn.alt { background: transparent; border: 1px solid rgba(255,255,255,0.06); color: var(--text); }
+
+/* small responsive tweaks */
+@media(min-width:720px) {
+  .app .wrap { max-width: 760px; }
+  .grid { grid-template-columns: repeat(3,1fr); }
+  .card-wrap { display: flex; gap: 16px; padding: 22px; }
+  .hero { flex: 0 0 280px; border-right: 1px solid var(--border-weak); align-items: flex-start; text-align: left; padding-right: 18px; }
+  .tab-panels { flex: 1; padding-left: 8px; }
+  .social-row { justify-content: flex-start; }
+  .tabs { flex-direction: column; }
+  .tab { width: 100%; }
+  .gallery { grid-template-columns: repeat(3,1fr); }
+  .musician-layout .hero { align-items: flex-start; text-align: left; }
+  .musician-layout .mini-info { justify-content: flex-start; }
+}
+
+/* Influencer theme adjustments (kept but using vars) */
+.thumb-influencer {
+  background-image: linear-gradient(45deg, rgba(255,182,193,0.05), rgba(0,0,0,0.04)), url('https://picsum.photos/id/1027/800/400');
+}
+.theme-influencer {
+  --card: #ffffff;
+  --text: #07121a;
+  --muted: #6b7280;
+  --accent: #ff416c;
+  --accent-2: #ff8a4b;
+  --glass: rgba(7,18,26,0.04);
+}
+.influencer-layout .avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(7,18,26,0.08);
+  background-color: #fff;
+  background-size: cover;
+  background-position: center;
+}
+.influencer-layout .role {
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.stats-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+.stat {
+  flex: 1;
+  background: linear-gradient(180deg, #fff, #fafafa);
+  color: var(--text);
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(7,18,26,0.04);
+}
+.stat strong {
+  display: block;
+  font-size: 16px;
+  color: var(--text);
+}
+.stat small {
+  color: var(--muted);
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+}
+.link-grid {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+.link-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff, #fff7f9);
+  text-decoration: none;
+  color: var(--text);
+  border: 1px solid rgba(7,18,26,0.04);
+  box-shadow: 0 6px 18px rgba(7,18,26,0.03);
+}
+.link-card strong { color: var(--text); font-weight: 700; }
+.link-card small { color: var(--muted); font-size: 12px; }
+.primary-btn { display: inline-block; padding: 10px 16px; border-radius: 10px; background: var(--accent); color: #ffffff; font-weight: 700; text-decoration: none; box-shadow: 0 8px 20px rgba(6,182,212,0.08); }
+.primary-btn:hover { filter: brightness(.96); transform: translateY(-1px); }
+
+/* Ensure clickable card area & nicer thumbnail overlays */
+.card a, .card > a { display: block; }
+
+/* ensure thumbnail backgrounds always cover and center */
+.card-thumbnail { background-size: cover !important; background-position: center !important; }
+
+/* small responsive tweak: make card-thumbnail taller on wider screens so previews feel nicer */
+@media (min-width: 720px) {
+  .card-thumbnail { height: 96px; }
+}
+
+/* Listing preview tweaks (these are safe global additions) */
+.listings { margin-bottom: 12px; }
+.listing .listing-body .listing-title { font-size: 15px; color: var(--text); }
+.listing .listing-body .listing-desc { font-size: 13px; color: var(--muted); }
+
+/* Ensure .cat active state */
+.cat.active { background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #07121a; border: none; box-shadow: 0 8px 24px rgba(255,138,76,0.06); }
+
+/* Thumbnail preview label helper */
+.card-thumbnail .preview-label {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  background: rgba(0,0,0,0.45);
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  display: none;
+}
