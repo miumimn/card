@@ -30,6 +30,9 @@ export default function ContactFormEnhancer() {
       return;
     }
 
+    // Assert non-null for all subsequent usage to satisfy TypeScript strict checks.
+    const formEl = form as HTMLFormElement;
+
     // Track elements we modified and their previous inline styles so we can restore on cleanup
     const modified = new Map<HTMLElement, { display?: string | null; visibility?: string | null; opacity?: string | null }>();
 
@@ -51,7 +54,7 @@ export default function ContactFormEnhancer() {
 
     // Walk ancestors and try to unhide only when computed style says hidden
     try {
-      let el: HTMLElement | null = form;
+      let el: HTMLElement | null = formEl;
       while (el) {
         // Remove explicit hiding attributes if present
         if (el.hasAttribute && el.hasAttribute("hidden")) {
@@ -122,7 +125,7 @@ export default function ContactFormEnhancer() {
     }
 
     // Ensure the panel can host overlay, set position only if necessary and record it
-    const panel = form.closest(".form-panel") as HTMLElement | null || form.parentElement;
+    const panel = formEl.closest(".form-panel") as HTMLElement | null || formEl.parentElement;
     let setPosition = false;
     let previousPosition = "";
     if (panel) {
@@ -154,7 +157,7 @@ export default function ContactFormEnhancer() {
     }
 
     // attach input/change listeners for cleanup
-    const inputs = Array.from(form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select"));
+    const inputs = Array.from(formEl.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select"));
     inputs.forEach(el => {
       const onInput = () => clearFieldError(el);
       const onChange = () => clearFieldError(el);
@@ -168,10 +171,11 @@ export default function ContactFormEnhancer() {
     function showSuccessOverlay() {
       if (!panel) return;
 
-      form.setAttribute("aria-hidden", "true");
-      form.style.pointerEvents = "none";
-      form.style.filter = "blur(2px) saturate(.95)";
-      form.style.opacity = "0.7";
+      // use asserted formEl
+      formEl.setAttribute("aria-hidden", "true");
+      formEl.style.pointerEvents = "none";
+      formEl.style.filter = "blur(2px) saturate(.95)";
+      formEl.style.opacity = "0.7";
 
       const overlay = document.createElement("div");
       overlay.className = "success-overlay";
@@ -216,10 +220,10 @@ export default function ContactFormEnhancer() {
       function cleanupOverlay() {
         try { overlay.remove(); } catch {}
         try { confettiRoot.remove(); } catch {}
-        form.removeAttribute("aria-hidden");
-        form.style.pointerEvents = "";
-        form.style.filter = "";
-        form.style.opacity = "";
+        formEl.removeAttribute("aria-hidden");
+        formEl.style.pointerEvents = "";
+        formEl.style.filter = "";
+        formEl.style.opacity = "";
       }
 
       overlay.addEventListener("click", (e) => {
@@ -235,11 +239,11 @@ export default function ContactFormEnhancer() {
       ev.preventDefault();
       if (formMessage) { formMessage.textContent = ""; formMessage.style.color = ""; formMessage.classList.remove("success"); }
 
-      const name = form.elements.namedItem("name") as HTMLInputElement | null;
-      const email = form.elements.namedItem("email") as HTMLInputElement | null;
-      const subject = form.elements.namedItem("subject") as HTMLInputElement | null;
-      const topic = form.elements.namedItem("topic") as HTMLSelectElement | null;
-      const message = form.elements.namedItem("message") as HTMLTextAreaElement | null;
+      const name = formEl.elements.namedItem("name") as HTMLInputElement | null;
+      const email = formEl.elements.namedItem("email") as HTMLInputElement | null;
+      const subject = formEl.elements.namedItem("subject") as HTMLInputElement | null;
+      const topic = formEl.elements.namedItem("topic") as HTMLSelectElement | null;
+      const message = formEl.elements.namedItem("message") as HTMLTextAreaElement | null;
 
       let firstInvalid: HTMLElement | null = null;
       if (!isNonEmpty(name?.value)) { showFieldError(name, "Full name is required"); firstInvalid = firstInvalid || name; }
@@ -264,7 +268,7 @@ export default function ContactFormEnhancer() {
         };
 
         inputs.forEach(i => i.setAttribute("disabled", "true"));
-        const submitBtn = form.querySelector<HTMLButtonElement>("button[type=submit]");
+        const submitBtn = formEl.querySelector<HTMLButtonElement>("button[type=submit]");
         if (submitBtn) { submitBtn.setAttribute("aria-busy", "true"); submitBtn.classList.add("loading"); }
 
         const res = await fetch("/api/contact", {
@@ -280,22 +284,22 @@ export default function ContactFormEnhancer() {
           if (formMessage) { formMessage.textContent = "Server error while sending message. Please try again later."; formMessage.style.color = "#ef4444"; }
         } else {
           showSuccessOverlay();
-          form.reset();
+          formEl.reset();
         }
       } catch (err) {
         console.error("Contact submit error:", err);
         if (formMessage) { formMessage.textContent = "⚠️ Network error please try again."; formMessage.style.color = "#ef4444"; }
       } finally {
         inputs.forEach(i => i.removeAttribute("disabled"));
-        const submitBtn = form.querySelector<HTMLButtonElement>("button[type=submit]");
+        const submitBtn = formEl.querySelector<HTMLButtonElement>("button[type=submit]");
         if (submitBtn) { submitBtn.removeAttribute("aria-busy"); submitBtn.classList.remove("loading"); }
       }
     }
 
-    form.addEventListener("submit", handleSubmit);
+    formEl.addEventListener("submit", handleSubmit);
 
     function handleResetClick() {
-      form.reset();
+      formEl.reset();
       inputs.forEach(i => clearFieldError(i));
       if (formMessage) { formMessage.textContent = ""; formMessage.style.color = ""; formMessage.classList.remove("success"); }
     }
@@ -305,7 +309,7 @@ export default function ContactFormEnhancer() {
 
     // cleanup: restore any inline styles we modified and event listeners
     return () => {
-      form.removeEventListener("submit", handleSubmit);
+      formEl.removeEventListener("submit", handleSubmit);
       if (resetBtn) resetBtn.removeEventListener("click", handleResetClick);
       inputs.forEach(el => {
         const onInput = (el as any).__cfe_onInput;
