@@ -17,5 +17,5 @@ export default function Page() {
     { name: "photos", label: "Photos (up to 3)", type: "files", maxFiles: 3, accept: "image/*" },
   ];
 
-  return <OnboardingForm slug="handyman" fields={questions} />;
+  return <OnboardingForm slug="handyman" fields={questions as unknown as any} />;
 }

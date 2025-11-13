@@ -67,7 +67,15 @@ export default function CheckoutForm() {
       return;
     }
 
-    const cats = Array.from(new Set(c.map((i) => i.cardCategory).filter(Boolean)));
+    // ensure we only keep string categories (filter type-guard), so cats[0] is string (not string|undefined)
+    const cats = Array.from(
+      new Set(
+        c
+          .map((i) => i.cardCategory)
+          .filter((x): x is string => !!x && typeof x === "string")
+      )
+    );
+
     if (cats.length === 1) {
       setUniformCategory(cats[0]);
       setCardCategory(cats[0] as "personal" | "business");
@@ -157,7 +165,8 @@ export default function CheckoutForm() {
     setProcessing(true);
 
     const generatedOrderId = generateOrderId();
-    const payload = buildPayload();
+    // cast payload to any so we can add orderId without widening the return type of buildPayload
+    const payload = buildPayload() as any;
     payload.orderId = generatedOrderId;
 
     try {

@@ -7,9 +7,16 @@ export type LawyerData = {
   title?: string;
   about?: string;
   services?: string[] | string;
+  offerings?: string[] | string;    // alias for merged.offerings
   testimonials?: string[] | string;
+  reviews?: string[] | string;      // alias for merged.reviews
   avatar?: string | string[];
+  avatar_url?: string;              // alias used by merged.avatar_url lookups
+  profileImage?: string | string[]; // alias used by merged.profileImage
+  profile_image?: string | string[];// alias used by merged.profile_image
   heroImage?: string | string[];
+  hero_image?: string | string[];   // alias used by merged.hero_image
+  banner?: string | string[];       // alias used by merged.banner
   email?: string;
   phone?: string;
   linkedin?: string;
@@ -33,7 +40,11 @@ export default function LawyerPreview({
   const [clientHref, setClientHref] = useState<string>("");
 
   useEffect(() => {
-    try { setClientHref(window.location.href || ""); } catch { setClientHref(""); }
+    try {
+      setClientHref(typeof window !== "undefined" ? window.location.href || "" : "");
+    } catch {
+      setClientHref("");
+    }
   }, []);
 
   const parseList = (val: any): string[] => {
@@ -43,9 +54,12 @@ export default function LawyerPreview({
     if (typeof val === "string") {
       const s = val.trim();
       if (!s) return [];
-      try { const parsed = JSON.parse(s); if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean); } catch {}
-      if (s.includes("\n")) return s.split("\n").map(l => l.trim()).filter(Boolean);
-      if (s.includes(",")) return s.split(",").map(l => l.trim()).filter(Boolean);
+      try {
+        const parsed = JSON.parse(s);
+        if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+      } catch {}
+      if (s.includes("\n")) return s.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (s.includes(",")) return s.split(",").map((l) => l.trim()).filter(Boolean);
       return [s];
     }
     return [];
@@ -57,7 +71,9 @@ export default function LawyerPreview({
       try {
         const parsed = typeof data.extra_fields === "string" ? JSON.parse(data.extra_fields || "{}") : data.extra_fields;
         if (parsed && typeof parsed === "object") {
-          Object.entries(parsed).forEach(([k, v]) => { if (out[k] === undefined) out[k] = v; });
+          Object.entries(parsed).forEach(([k, v]) => {
+            if (out[k] === undefined) out[k] = v;
+          });
         }
       } catch {}
     }
@@ -72,7 +88,7 @@ export default function LawyerPreview({
   const services = parseList(merged.services ?? merged.offerings);
   const testimonials = parseList(merged.testimonials ?? merged.reviews);
 
-  const avatarCandidates = parseList(merged.avatar ?? merged.avatar_url ?? merged.profileImage);
+  const avatarCandidates = parseList(merged.avatar ?? merged.avatar_url ?? merged.profileImage ?? merged.profile_image);
   const heroCandidates = parseList(merged.heroImage ?? merged.hero_image ?? merged.banner);
   let avatar = avatarCandidates.length ? avatarCandidates[0] : "";
   let heroImage = heroCandidates.length ? heroCandidates[0] : "";
@@ -142,7 +158,6 @@ export default function LawyerPreview({
                 {email ? <a className="btn btn-primary" href={`mailto:${email}`}>Email</a> : null}
                 {phone ? <a className="btn btn-ghost" href={`tel:${phone.replace(/\s+/g, "")}`}>Call</a> : null}
                 {booking ? <a className="btn btn-primary" href={booking} target="_blank" rel="noreferrer">Book a Consultation</a> : null}
-                {/* Use this template CTA shown only for template preview (showFooter === true) */}
                 {showFooter ? (
                   <button className="btn btn-ghost" onClick={() => router.push("/onboarding/lawyer")}>Use this template</button>
                 ) : null}

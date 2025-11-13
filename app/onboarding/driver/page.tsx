@@ -29,12 +29,12 @@ export default function Page() {
     { name: "email", label: "Email", type: "email", placeholder: "sam@driverservice.com" },
     { name: "phone", label: "Phone", type: "tel", placeholder: "+1 555 555 5555" },
     { name: "rates", label: "Rates (optional)", type: "text", placeholder: "From $25 / trip" },
-    { name: "booking_link", label: "Booking link (optional)", type: "url", placeholder: "https://booking.example.com/your-service" },
+   { name: "booking_link", label: "Booking contact (phone or URL)", type: "text", placeholder: "tel:+15551234567 OR https://booking.example/yourclinic", help: "Provide a phone number to dial or a full URL to your booking page." },
 
     { name: "contact_cards", label: "Contact cards (one per line)", type: "textarea", placeholder: "Insurance info\nDriver license & certifications" },
 
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="driver" fields={questions} />;
+  return <OnboardingForm slug="driver" fields={questions as unknown as any} />;
 }

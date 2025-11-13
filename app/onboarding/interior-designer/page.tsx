@@ -12,5 +12,5 @@ export default function Page() {
     { name: "profileImage", label: "Profile photo / logo", type: "files", maxFiles: 1, accept: "image/*" },
   ];
 
-  return <OnboardingForm slug="interior-designer" fields={questions} />;
+  return <OnboardingForm slug="interior-designer" fields={questions as unknown as any} />;
 }

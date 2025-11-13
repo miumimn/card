@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import FreelancerPreview from "@/app/templates-preview/FreelancerPreview";
 
@@ -56,17 +56,23 @@ function parsePossibleList(val: any) {
 }
 
 export default function FreelancerProfilePreviewPage() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClientComponentClient();
 
-  const id = searchParams.get("id");
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const id = (typeof window !== "undefined") ? searchParams.get("id") : null;
+
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(!!id);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) {
+    // If running client-side via next/navigation useSearchParams would be preferred,
+    // but keep behavior consistent if this file is executed in other contexts.
+    const params = new URLSearchParams(window.location.search);
+    const paramId = params.get("id");
+
+    if (!paramId) {
       setLoading(false);
       setError("No id provided in the URL.");
       return;
@@ -118,10 +124,17 @@ export default function FreelancerProfilePreviewPage() {
           if (!found) found = listRes.data.find((o: any) => o.name.toLowerCase().includes(lowered));
           if (found) {
             const path = `${prefix}/${found.name}`.replace(/^\/+/, "");
-            const { publicURL } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-            if (publicURL) {
-              if (await headOk(publicURL)) return publicURL;
-              return publicURL;
+            // getPublicUrl can return different shapes depending on SDK version:
+            // - { data: { publicUrl: string } }
+            // - { publicURL: string } (older)
+            const res = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+            const publicUrl =
+              (res && (res as any).data && (res as any).data.publicUrl) ||
+              (res && (res as any).publicURL) ||
+              "";
+            if (publicUrl) {
+              if (await headOk(publicUrl)) return publicUrl;
+              return publicUrl;
             }
           }
         }
@@ -135,7 +148,7 @@ export default function FreelancerProfilePreviewPage() {
       setLoading(true);
       setError(null);
       try {
-        const { data: fetched, error: fetchError } = await supabase.from("onboardings").select("*").eq("id", id).single();
+        const { data: fetched, error: fetchError } = await supabase.from("onboardings").select("*").eq("id", paramId).single();
         if (fetchError) {
           console.error(fetchError);
           setError(fetchError.message || "Error fetching onboarding row");
@@ -192,7 +205,7 @@ export default function FreelancerProfilePreviewPage() {
     };
 
     fetchData();
-  }, [id, supabase, router]);
+  }, [supabase, router]);
 
   if (loading) return <p style={{ textAlign: "center", padding: 20 }}>Loading preview...</p>;
   if (error) return (

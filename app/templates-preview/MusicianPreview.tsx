@@ -7,11 +7,22 @@ export type MusicianData = {
   role?: string;
   about?: string;
   tracks?: { title?: string; duration?: string; released?: string; url?: string }[] | string[] | string;
+  track_list?: string[] | string;
+  songs?: string[] | string;
   gigs?: string[] | string;
+  upcoming_gigs?: string[] | string; // alias used by merged.upcoming_gigs
   press?: string[] | string;
+  media?: string[] | string;         // alias used by merged.media
   portfolio?: string[] | string;
+  gallery?: string[] | string;       // alias used by merged.gallery
+  images?: string[] | string;        // alias used by merged.images
   avatar?: string | string[];
+  avatar_url?: string;               // alias used by merged.avatar_url
+  profileImage?: string | string[];  // alias used by merged.profileImage
+  profile_image?: string | string[]; // alias used by merged.profile_image
   heroImage?: string | string[];
+  hero_image?: string | string[];    // alias used by merged.hero_image
+  banner?: string | string[];        // alias used by merged.banner
   email?: string;
   phone?: string;
   spotify?: string;
@@ -31,9 +42,17 @@ export default function MusicianPreview({ data, showFooter = true }: { data?: Mu
   const [tab, setTab] = useState<"music" | "gigs" | "bio" | "press" | "contact">("music");
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [clientHref, setClientHref] = useState<string>("");
+  const [showDebug, setShowDebug] = useState<boolean>(false);
 
   useEffect(() => {
-    try { setClientHref(window.location.href || ""); } catch { setClientHref(""); }
+    try { setClientHref(typeof window !== "undefined" ? window.location.href || "" : ""); } catch { setClientHref(""); }
+    try {
+      // Only show debug panel if URL has debug=1
+      const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+      setShowDebug(params.get("debug") === "1");
+    } catch {
+      setShowDebug(false);
+    }
   }, []);
 
   const parseList = (val: any): string[] => {
@@ -91,12 +110,13 @@ export default function MusicianPreview({ data, showFooter = true }: { data?: Mu
   const role = merged.role ? String(merged.role) : (showFooter ? "Singer • Songwriter — Indie / Alternative" : "");
   const about = merged.about ? String(merged.about) : (showFooter ? "Writes intimate songs blending synth textures with acoustic storytelling." : "");
 
+  // support alternate keys
   const tracks = parseTracks(merged.tracks ?? merged.track_list ?? merged.songs);
   const gigs = parseList(merged.gigs ?? merged.upcoming_gigs);
   const press = parseList(merged.press ?? merged.media);
   const portfolioRaw = parseImageField(merged.portfolio ?? merged.gallery ?? merged.images);
 
-  const avatarCandidates = parseImageField(merged.avatar ?? merged.avatar_url ?? merged.profileImage);
+  const avatarCandidates = parseImageField(merged.avatar ?? merged.avatar_url ?? merged.profileImage ?? merged.profile_image);
   const heroCandidates = parseImageField(merged.heroImage ?? merged.hero_image ?? merged.banner);
 
   let avatar = avatarCandidates.length ? avatarCandidates[0] : "";
@@ -144,78 +164,7 @@ export default function MusicianPreview({ data, showFooter = true }: { data?: Mu
   const booking = merged.booking_link ? String(merged.booking_link) : "";
   const profileUrl = merged.profile_url ? String(merged.profile_url) : "";
 
-  const callHref = phone ? `tel:${phone.replace(/\s+/g, "")}` : (booking || clientHref);
-
-  useEffect(() => {
-    if (tracks.length) setTab("music");
-    else if (portfolio.length) setTab("music");
-    else if (gigs.length) setTab("gigs");
-    else setTab("bio");
-  }, [tracks.length, portfolio.length, gigs.length]);
-
-  const openLightbox = (src?: string | null) => { if (!src) return; setLightbox(src); };
-  const closeLightbox = () => setLightbox(null);
-
-  /* SVG Icons */
-  const IconSpotify = ({ size = 18 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false">
-      <circle cx="12" cy="12" r="10" fill="currentColor" />
-      <path d="M7.6 10.5c3.2-1.9 8.4-1 10.6 0.2" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <path d="M6.5 13.3c2.6-1.4 6.5-0.7 8.6 0.2" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      <path d="M8 15.2c1.8-0.9 4.6-0.5 6 0.1" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    </svg>
-  );
-  const IconApple = ({ size = 18 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false">
-      <path d="M16.365 1.43c0 1.02-.37 2.01-1.02 2.79-.7.84-1.94 1.74-3.11 1.37-.18-.06-.36-.12-.53-.2-.73-.31-1.44-.53-2.21-.42-.41.06-.82.2-1.23.42-.27.14-.55.3-.82.45-.53.29-1.12.59-1.66.97-.51.36-.97.82-1.36 1.35C1.9 12.42 3 17.5 6.07 20.16c1.85 1.55 3.98 2.1 6.32 2.1 1.2 0 2.39-.11 3.56-.31 2.05-.36 3.6-1.25 4.66-2.67-2.62-1.4-3.92-3.9-3.92-6.8 0-1.38.21-2.73.64-4.03.19-.58.43-1.15.7-1.7.11-.25.2-.5.28-.75.18-.58.27-1.15.27-1.74 0-.98-.31-1.9-.93-2.73C17.99 2.21 16.98 1.45 16.36 1.43z" fill="currentColor"/>
-    </svg>
-  );
-  const IconAudiomack = ({ size = 18 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false">
-      <path d="M12 2c-3 0-5.5 2.2-5.5 5 0 4.5 5.5 11 5.5 11s5.5-6.5 5.5-11c0-2.8-2.5-5-5.5-5z" fill="currentColor"/>
-      <circle cx="12" cy="7" r="1.6" fill="#fff"/>
-    </svg>
-  );
-  const IconSoundCloud = ({ size = 18 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false">
-      <path d="M4 14h1v3H4zM6 13.5h1v4H6zM8 13h1v5H8z" fill="currentColor"/>
-      <path d="M10 12c.6 0 1 .4 1 1v4h6.5C19.9 17 21 15.7 21 14.1 21 12 19.3 10.5 17.4 10.5 16.6 10.5 15.8 10.7 15 11 14.3 11.3 12.3 12 10 12z" fill="currentColor"/>
-    </svg>
-  );
-  const IconBandcamp = ({ size = 18 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false">
-      <path d="M2 12l8-8h12v16H2z" fill="currentColor"/>
-      <path d="M5 12h6l6 6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    </svg>
-  );
-  const IconInstagram = ({ size = 18 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false">
-      <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.2" fill="none"/>
-      <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.2" fill="none"/>
-      <circle cx="17.5" cy="6.5" r="0.9" fill="currentColor"/>
-    </svg>
-  );
-  const IconYouTube = ({ size = 18 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden focusable="false">
-      <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" fill="none"/>
-      <path d="M10 9v6l5-3z" fill="currentColor"/>
-    </svg>
-  );
-
-  const iconButtonStyle = (enabled: boolean): React.CSSProperties => ({
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    background: enabled ? "rgba(255,255,255,0.04)" : "transparent",
-    color: enabled ? "var(--mu-accent)" : "rgba(255,255,255,0.18)",
-    textDecoration: "none",
-    border: enabled ? "1px solid rgba(255,255,255,0.04)" : "1px solid rgba(255,255,255,0.02)",
-  });
-
-  const buildHref = (value: string, provider: string) => {
+  function buildHref(value: string, provider: string) {
     if (!value) return "";
     if (/^https?:\/\//.test(value)) return value;
     switch (provider) {
@@ -228,7 +177,19 @@ export default function MusicianPreview({ data, showFooter = true }: { data?: Mu
       case "youtube": return `https://youtube.com/${value}`;
       default: return value;
     }
-  };
+  }
+
+  const callHref = phone ? `tel:${phone.replace(/\s+/g, "")}` : (booking || clientHref);
+
+  useEffect(() => {
+    if (tracks.length) setTab("music");
+    else if (portfolio.length) setTab("music");
+    else if (gigs.length) setTab("gigs");
+    else setTab("bio");
+  }, [data]);
+
+  const openLightbox = (src?: string | null) => { if (!src) return; setLightbox(src); };
+  const closeLightbox = () => setLightbox(null);
 
   return (
     <>
@@ -246,7 +207,14 @@ export default function MusicianPreview({ data, showFooter = true }: { data?: Mu
 .avatar { width:92px; height:92px; border-radius:999px; border:4px solid rgba(255,255,255,0.9); background-size:cover; background-position:center; }
 .name{ margin:0; font-weight:900; font-size:20px; color:var(--mu-accent); }
 .role{ margin:4px 0 0; color:var(--mu-muted); font-weight:700; font-size:13px; }
-.social-row{ display:flex; gap:10px; margin-top:10px; align-items:center; }
+.tab{ padding:8px 12px; margin-right:8px; border-radius:8px; background:transparent; color:var(--mu-muted); border:1px solid rgba(255,255,255,0.02); cursor:pointer; }
+.tab.active{ background:linear-gradient(90deg,var(--mu-accent), rgba(255,77,109,0.08)); color:#fff; border:none; }
+.panel{ display:none; margin-top:12px; color:var(--mu-muted); }
+.panel.active{ display:block; }
+.actions-row{ display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+.back-btn, .use-template { padding:8px 12px; border-radius:8px; font-weight:700; }
+.use-template { background: linear-gradient(90deg,var(--mu-accent), #ff9fb6); color: #fff; border: none; }
+.debug-json { background: #fff; color: #111; padding: 12px; border-radius: 8px; margin-top: 16px; max-height: 320px; overflow:auto; }
 ` }} />
 
       <div className="musician-wrap">
@@ -258,47 +226,9 @@ export default function MusicianPreview({ data, showFooter = true }: { data?: Mu
               <div className="role">{role}</div>
 
               <nav className="social-row" aria-label="social links">
-                {spotify ? (
-                  <a href={buildHref(spotify, "spotify")} target="_blank" rel="noreferrer" aria-label="Spotify" style={iconButtonStyle(true)}>
-                    <IconSpotify />
-                  </a>
-                ) : null}
-
-                {apple_music ? (
-                  <a href={buildHref(apple_music, "apple")} target="_blank" rel="noreferrer" aria-label="Apple Music" style={iconButtonStyle(true)}>
-                    <IconApple />
-                  </a>
-                ) : null}
-
-                {audiomack ? (
-                  <a href={buildHref(audiomack, "audiomack")} target="_blank" rel="noreferrer" aria-label="Audiomack" style={iconButtonStyle(true)}>
-                    <IconAudiomack />
-                  </a>
-                ) : null}
-
-                {soundcloud ? (
-                  <a href={buildHref(soundcloud, "soundcloud")} target="_blank" rel="noreferrer" aria-label="SoundCloud" style={iconButtonStyle(true)}>
-                    <IconSoundCloud />
-                  </a>
-                ) : null}
-
-                {bandcamp ? (
-                  <a href={buildHref(bandcamp, "bandcamp")} target="_blank" rel="noreferrer" aria-label="Bandcamp" style={iconButtonStyle(true)}>
-                    <IconBandcamp />
-                  </a>
-                ) : null}
-
-                {instagram ? (
-                  <a href={buildHref(instagram, "instagram")} target="_blank" rel="noreferrer" aria-label="Instagram" style={iconButtonStyle(true)}>
-                    <IconInstagram />
-                  </a>
-                ) : null}
-
-                {youtube ? (
-                  <a href={buildHref(youtube, "youtube")} target="_blank" rel="noreferrer" aria-label="YouTube" style={iconButtonStyle(true)}>
-                    <IconYouTube />
-                  </a>
-                ) : null}
+                {spotify ? (<a href={buildHref(spotify, "spotify")} target="_blank" rel="noreferrer" style={{ display: "inline-flex", marginRight: 8 }} aria-label="Spotify">Spotify</a>) : null}
+                {apple_music ? (<a href={buildHref(apple_music, "apple")} target="_blank" rel="noreferrer" style={{ display: "inline-flex", marginRight: 8 }} aria-label="Apple Music">Apple</a>) : null}
+                {soundcloud ? (<a href={buildHref(soundcloud, "soundcloud")} target="_blank" rel="noreferrer" style={{ display: "inline-flex", marginRight: 8 }} aria-label="SoundCloud">SoundCloud</a>) : null}
               </nav>
             </div>
           </div>
@@ -317,7 +247,7 @@ export default function MusicianPreview({ data, showFooter = true }: { data?: Mu
             <h3 style={{ margin: "0 0 8px" }}>Latest Tracks</h3>
             <div>
               {tracks.map((t, i) => (
-                <div key={i} className="track">
+                <div key={i} className="track" style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
                   <div style={{ flex: 1 }}>
                     <strong>{t.title}{t.duration ? ` — ${t.duration}` : ""}</strong>
                     {t.released ? <div style={{ color: "var(--mu-muted)", fontSize: 13 }}>{t.released}</div> : null}
@@ -329,7 +259,7 @@ export default function MusicianPreview({ data, showFooter = true }: { data?: Mu
           </article>
 
           <article id="gigs" className={`panel ${tab === "gigs" ? "active" : ""}`} role="tabpanel">
-            <h3 style={{ margin: "0 0 8px" }}>Upcoming Gigs</h3>
+            <h3 style={{ margin: 0, fontSize: 18 }}>Upcoming Gigs</h3>
             <div style={{ color: "var(--mu-muted)" }}>
               {gigs.map((g, i) => <div key={i} style={{ marginBottom: 8 }}><strong>{g}</strong></div>)}
             </div>
@@ -356,15 +286,26 @@ export default function MusicianPreview({ data, showFooter = true }: { data?: Mu
         </section>
 
         <div className="actions-row" style={{ marginTop: 18 }}>
+          {/* Back always shown in template preview */}
           <button className="back-btn" onClick={() => router.push("/templates-preview")}>Back</button>
+
+          {/* Use this template only when showFooter is true */}
           {showFooter ? <button className="use-template" onClick={() => router.push("/onboarding/musician")}>Use this template</button> : null}
         </div>
+
+        {/* DEBUG: show full raw "data" object only when debug=1 in URL */}
+        {showDebug && !showFooter && data ? (
+          <div className="debug-json" role="region" aria-label="Raw fetched onboarding data">
+            <strong style={{ display: "block", marginBottom: 8 }}>Debug: fetched data (from profile preview fetcher)</strong>
+            <pre style={{ whiteSpace: "pre-wrap", fontSize: 12, margin: 0 }}>{JSON.stringify(data, null, 2)}</pre>
+          </div>
+        ) : null}
 
         {portfolio.length ? (
           <section style={{ marginTop: 18 }}>
             <h3 style={{ margin: "0 0 8px" }}>Gallery</h3>
-            <div className="gallery">
-              {portfolio.map((src, i) => <img key={i} src={src} alt={`look ${i+1}`} onClick={() => openLightbox(src)} />)}
+            <div className="gallery" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 8 }}>
+              {portfolio.map((src, i) => <img key={i} src={src} alt={`look ${i+1}`} style={{ width: "100%", borderRadius: 8 }} onClick={() => openLightbox(src)} />)}
             </div>
           </section>
         ) : null}

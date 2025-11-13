@@ -112,8 +112,10 @@ export default function EventPlannerProfilePreviewPage() {
           if (!found) found = listRes.data.find((o: any) => o.name.toLowerCase().includes(lowered));
           if (found) {
             const path = `${prefix}/${found.name}`.replace(/^\/+/, "");
-            const { publicURL } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-            if (publicURL) return publicURL;
+            // getPublicUrl returns an object shaped like { data: { publicUrl: string } }
+            const res = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+            const publicUrl = (res && (res as any).data && (res as any).data.publicUrl) || (res && (res as any).publicURL) || "";
+            if (publicUrl) return publicUrl;
           }
         }
       } catch (err) {

@@ -7,10 +7,20 @@ export type GymTrainerData = {
   role?: string;
   about?: string;
   programs?: string[] | string;
+  program_list?: string[] | string;     // alias added
+  services?: string[] | string;         // keep as fallback alias
   classes?: string[] | string;
+  upcoming?: string[] | string;         // alias added
+  listings?: string[] | string;         // alias added
   testimonials?: string[] | string;
+  reviews?: string[] | string;          // alias added
   avatar?: string | string[];
+  avatar_url?: string;                  // alias (safe)
+  profileImage?: string | string[];     // alias (safe)
+  profile_image?: string | string[];    // alias (safe)
   heroImage?: string | string[];
+  hero_image?: string | string[];       // alias (safe)
+  banner?: string | string[];           // alias (safe)
   email?: string;
   phone?: string;
   whatsapp?: string;
@@ -79,6 +89,7 @@ export default function GymTrainerPreview({
   const role = merged.role ? String(merged.role) : (showFooter ? "Personal Trainer • Strength & HIIT" : "");
   const about = merged.about ? String(merged.about) : (showFooter ? "Custom fitness plans — HIIT, strength, mobility. 7+ years coaching." : "");
 
+  // accept program_list and services as aliases
   const programs = parseList(merged.programs ?? merged.program_list ?? merged.services);
   const classes = parseList(merged.classes ?? merged.upcoming ?? merged.listings);
   const testimonials = parseList(merged.testimonials ?? merged.reviews);

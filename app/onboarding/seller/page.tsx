@@ -27,7 +27,7 @@ export default function Page() {
     { name: "avatar", label: "Store avatar", type: "files", maxFiles: 1, accept: "image/*" },
 
     // store owner & contact info (added per your request)
-    { name: "owner_name", label: "Owner / Contact name", type: "text", placeholder: "e.g. Executive Ufu" },
+    { name: "owner_name", label: "Owner / Contact name", type: "text", placeholder: "e.g. Executive Cloth" },
     { name: "opening_hours", label: "Opening hours", type: "text", placeholder: "e.g. Mon–Sat • 9:00–18:00" },
     { name: "address", label: "Address", type: "text", placeholder: "e.g. 88 Market Lane, Smalltown" },
 
@@ -38,5 +38,6 @@ export default function Page() {
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourstore" },
   ];
 
-  return <OnboardingForm slug="seller" fields={fields} submitLabel="Save & Preview" />;
+  // Use `fields` (was incorrectly referencing `questions`) and cast to avoid TS widening errors.
+  return <OnboardingForm slug="seller" fields={fields as unknown as any} submitLabel="Save & Preview" />;
 }

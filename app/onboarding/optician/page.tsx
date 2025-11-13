@@ -10,7 +10,7 @@ import OnboardingForm from "@/components/OnboardingForm";
  * otherwise it will open the URL in a new tab.
  */
 export default function Page() {
-  const fields = [
+  const questions = [
     { name: "name", label: "Clinic / Business name", type: "text", placeholder: "e.g. ClearSight Optics", required: true },
     { name: "clinic", label: "Location / Clinic", type: "text", placeholder: "Downtown Clinic" },
     { name: "about", label: "Short description", type: "textarea", placeholder: "Eye exams, designer frames and custom lenses..." },
@@ -35,5 +35,5 @@ export default function Page() {
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="optician" fields={fields} />;
+  return <OnboardingForm slug="optician" fields={questions as unknown as any} />;
 }

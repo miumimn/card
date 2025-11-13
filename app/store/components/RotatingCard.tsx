@@ -31,8 +31,10 @@ export default function RotatingCard({
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
+    const elRaw = wrapRef.current;
+    if (!elRaw) return;
+    // assert non-null for the remainder of this effect so nested functions don't need to repeat checks
+    const el = elRaw;
 
     // don't animate if user requested reduced motion
     const reduceMotion = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -106,7 +108,7 @@ export default function RotatingCard({
     rafRef.current = requestAnimationFrame(refresh);
 
     return () => {
-      if (!el) return;
+      // use the same el captured above
       el.removeEventListener("pointermove", pointerMove);
       el.removeEventListener("pointerenter", pointerEnter);
       el.removeEventListener("pointerleave", pointerLeave);

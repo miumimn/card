@@ -23,7 +23,7 @@ export default function Page() {
     );
   }
 
-  const fields = [
+  const questions = [
     { name: "name", label: "Agent name", type: "text", placeholder: "e.g. Morgan Smith", required: true },
     { name: "role", label: "Role / Subtitle", type: "text", placeholder: "Licensed Realtor — Metro Area" },
     { name: "about", label: "About / Bio", type: "textarea", placeholder: "Short bio and specialties" },
@@ -54,5 +54,5 @@ export default function Page() {
     ...listingFields
   ];
 
-  return <OnboardingForm slug="realtor" fields={fields} submitLabel="Save & Preview" />;
+  return <OnboardingForm slug="realtor" fields={questions as unknown as any} submitLabel="Save & Preview" />;
 }

@@ -6,7 +6,9 @@ type DriverData = {
   name?: string;
   role?: string;
   vehicleImage?: string;
+  vehicle_image?: string;
   heroImage?: string;
+  hero_image?: string;
   stats?: string[] | string;
   services?: string[] | string;
   availability?: string[] | string;
@@ -78,8 +80,20 @@ export default function DriverPreview({ data, showFooter = true }: { data?: Driv
 
   const name = merged.name || (showFooter ? "Sam Ryder" : "");
   const role = merged.role || (showFooter ? "Professional Driver — Rides & Transfers" : "");
-  const vehicleImage = asString(merged.vehicleImage ?? merged.extra_fields?.vehicleImage ?? merged.heroImage ?? merged.hero_image);
-  const heroImage = asString(merged.heroImage ?? merged.extra_fields?.heroImage);
+  const vehicleImage = asString(
+    merged.vehicleImage ??
+    merged.vehicle_image ??
+    merged.extra_fields?.vehicleImage ??
+    merged.extra_fields?.vehicle_image ??
+    merged.heroImage ??
+    merged.hero_image
+  );
+  const heroImage = asString(
+    merged.heroImage ??
+    merged.hero_image ??
+    merged.extra_fields?.heroImage ??
+    merged.extra_fields?.hero_image
+  );
 
   const stats = asArray(merged.stats ?? merged.extra_fields?.stats);
   const statsToShow = stats.length ? stats : (showFooter ? ["4.9★ Rating", "Insured", "Clean vehicle"] : []);

@@ -30,6 +30,26 @@ function parsePossibleList(val: any) {
   return null;
 }
 
+// Normalization helpers used by DJPreview normalization logic
+function asString(val: any): string {
+  if (val === null || val === undefined) return "";
+  if (typeof val === "string") return val.trim();
+  if (Array.isArray(val) && val.length) return String(val[0]).trim();
+  return String(val ?? "");
+}
+function asArray(val: any): string[] {
+  if (val === null || val === undefined) return [];
+  if (Array.isArray(val)) return val.map(String).filter(Boolean);
+  if (typeof val === "string") {
+    const s = val.trim();
+    if (!s) return [];
+    if (s.includes("\n")) return s.split("\n").map((x) => x.trim()).filter(Boolean);
+    if (s.includes(",")) return s.split(",").map((x) => x.trim()).filter(Boolean);
+    return [s];
+  }
+  return [];
+}
+
 export default function DJProfilePreviewPage() {
   const searchParams = useSearchParams();
   const router = useRouter();

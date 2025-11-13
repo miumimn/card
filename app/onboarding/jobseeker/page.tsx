@@ -6,7 +6,7 @@ import OnboardingForm from "@/components/OnboardingForm";
  * Onboarding fields for Job Seeker template
  */
 export default function Page() {
-  const fields = [
+  const questions = [
     { name: "name", label: "Full name", type: "text", placeholder: "e.g. Jordan Blake", required: true },
     { name: "role", label: "Title / Role", type: "text", placeholder: "Product Designer — UX / UI • Remote" },
     { name: "about", label: "Short bio / summary", type: "textarea", placeholder: "Your one‑line professional summary" },
@@ -28,5 +28,5 @@ export default function Page() {
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="jobseeker" fields={fields} />;
+  return <OnboardingForm slug="jobseeker" fields={questions as unknown as any} />;
 }

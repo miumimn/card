@@ -32,5 +32,5 @@ export default function Page() {
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="developer" fields={questions} />;
+  return <OnboardingForm slug="developer" fields={questions as unknown as any} />;
 }

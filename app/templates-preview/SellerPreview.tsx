@@ -49,7 +49,8 @@ function isValidUrl(v?: string) {
   return /^https?:\/\//i.test(s);
 }
 
-function isMeaningfulListing(l: SellerListing) {
+// Changed signature to be a type guard so .filter(isMeaningfulListing) narrows the array correctly
+function isMeaningfulListing(l: SellerListing | null): l is SellerListing {
   if (!l) return false;
   const title = (l.title || "").toString().trim();
   const price = (l.price || "").toString().trim();
@@ -85,7 +86,7 @@ export default function SellerPreview({ data, showFooter = true }: { data?: Sell
   }, [data]);
 
   const name = merged.name ?? (showFooter ? "Corner Craft Co." : "");
-  const tagline = merged.tagline ?? (showFooter ? "Handmade goods & daily essentials — local pick-up & delivery" : "");
+  const tagline = merged.tagline ?? (showFooter ? "Handmade goods & daily essentials, local pick-up & delivery" : "");
   const avatarCandidates = parseList(merged.avatar ?? merged.extra_fields?.avatar);
   const avatar = avatarCandidates.length ? avatarCandidates[0] : (showFooter ? "https://picsum.photos/id/1044/600/600" : "");
   const otherLinks = parseList(merged.other_links ?? merged.extra_fields?.other_links);
@@ -122,7 +123,7 @@ export default function SellerPreview({ data, showFooter = true }: { data?: Sell
       }
     }
     return [];
-  }, [JSON.stringify(rawListings)]);
+  }, [JSON.stringify(rawListings)]) as SellerListing[];
 
   // QR data: prefer profile_url when valid, otherwise use clientHref if not null
   const qrData = (() => {

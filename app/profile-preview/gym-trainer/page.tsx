@@ -90,10 +90,14 @@ export default function GymTrainerProfilePreviewPage() {
           if (!found) found = listRes.data.find((o: any) => o.name.toLowerCase().includes(lowered));
           if (found) {
             const path = `${prefix}/${found.name}`.replace(/^\/+/, "");
-            const { publicURL } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-            if (publicURL) {
-              if (await headOk(publicURL)) return publicURL;
-              return publicURL;
+            // Support both SDK response shapes:
+            // - new: { data: { publicUrl: string } }
+            // - older: { publicURL: string }
+            const res = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path) as any;
+            const publicUrl = (res && res.data && res.data.publicUrl) || (res && res.publicURL) || "";
+            if (publicUrl) {
+              if (await headOk(publicUrl)) return publicUrl;
+              return publicUrl;
             }
           }
         }

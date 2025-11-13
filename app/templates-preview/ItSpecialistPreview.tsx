@@ -5,11 +5,23 @@ import { useRouter } from "next/navigation";
 export type ItSpecialistData = {
   name?: string;
   title?: string;
+  role?: string;                         // alias added to accept merged.role
   about?: string;
+  bio?: string;                          // added to accept merged.bio
   services?: string[] | string;
+  services_list?: string[] | string;     // alias added
+  offerings?: string[] | string;         // alias added
   portfolio?: string[] | string;
+  portfolio_images?: string[] | string;  // alias added
+  images?: string[] | string;            // alias added
+  gallery?: string[] | string;           // alias added
   avatar?: string | string[];
+  avatar_url?: string;                   // alias added
+  profileImage?: string | string[];      // alias added
+  profile_image?: string | string[];     // alias added
   heroImage?: string | string[];
+  hero_image?: string | string[];        // alias added
+  banner?: string | string[];            // alias added
   email?: string;
   phone?: string;
   whatsapp?: string;
@@ -18,6 +30,7 @@ export type ItSpecialistData = {
   website?: string;
   booking_link?: string;
   profile_url?: string;
+  profileUrl?: string;                   // alias added
   contact_cards?: string[] | string;
   extra_fields?: any;
 };
@@ -86,7 +99,7 @@ export default function ItSpecialistPreview({
   const services = parseList(merged.services ?? merged.services_list ?? merged.offerings);
   const portfolioRaw = parseImageField(merged.portfolio ?? merged.portfolio_images ?? merged.images ?? merged.gallery);
 
-  const avatarCandidates = parseImageField(merged.avatar ?? merged.avatar_url ?? merged.profileImage);
+  const avatarCandidates = parseImageField(merged.avatar ?? merged.avatar_url ?? merged.profileImage ?? merged.profile_image);
   const heroCandidates = parseImageField(merged.heroImage ?? merged.hero_image ?? merged.banner);
 
   let avatar = avatarCandidates.length ? avatarCandidates[0] : "";
@@ -117,7 +130,7 @@ export default function ItSpecialistPreview({
   const website = Array.isArray(websiteRaw) ? String(websiteRaw[0]) : String(websiteRaw ?? "");
   const bookingLinkRaw = merged.booking_link ?? merged.profile_url ?? "";
   const bookingLink = Array.isArray(bookingLinkRaw) ? String(bookingLinkRaw[0]) : String(bookingLinkRaw ?? "");
-  const profileUrlRaw = merged.profile_url ?? "";
+  const profileUrlRaw = merged.profile_url ?? merged.profileUrl ?? "";
   const profileUrl = Array.isArray(profileUrlRaw) ? String(profileUrlRaw[0]) : String(profileUrlRaw ?? "");
 
   const callHref = phone ? `tel:${phone.replace(/\s+/g, "")}` : (whatsapp ? (whatsapp.startsWith("http") ? whatsapp : `https://wa.me/${whatsapp.replace(/\D/g, "")}`) : (bookingLink || clientHref));

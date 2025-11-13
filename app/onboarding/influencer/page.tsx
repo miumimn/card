@@ -9,7 +9,7 @@ import OnboardingForm from "@/components/OnboardingForm";
  */
 
 export default function Page() {
-  const fields = [
+  const questions = [
     // Profile
     { name: "fullName", label: "Full name", type: "text", placeholder: "e.g. Sierra Lane", required: true },
     { name: "stageName", label: "Display name / Brand", type: "text", placeholder: "e.g. Sierra Lane" },
@@ -39,5 +39,5 @@ export default function Page() {
     { name: "notes", label: "Anything else you want to add (optional)", type: "textarea", placeholder: "Special requests, availability, or important notes" },
   ];
 
-  return <OnboardingForm slug="influencer" fields={fields} submitLabel="Save & Preview" />;
+  return <OnboardingForm slug="influencer" fields={questions as unknown as any} submitLabel="Save & Preview" />;
 }

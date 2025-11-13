@@ -137,17 +137,14 @@ export default function OnboardingForm({
 
           // Use SDK getPublicUrl to get the canonical public URL for the uploaded object.
           try {
-            const { data: pubData, error: pubErr } = supabaseClient.storage.from(bucket).getPublicUrl(data.path);
-            if (pubErr) {
-              console.warn("getPublicUrl error", pubErr);
-              const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-              if (base) {
-                const encoded = data.path.split("/").map((s: string) => encodeURIComponent(s)).join("/");
-                uploaded[field].push(`${base}/storage/v1/object/public/${bucket}/${encoded}`);
-              }
-            } else if (pubData?.publicUrl) {
+            // getPublicUrl returns an object like { data: { publicUrl: string } } (no `error` field),
+            // so we must read the returned data accordingly.
+            const res = supabaseClient.storage.from(bucket).getPublicUrl(data.path);
+            const pubData = res?.data;
+            if (pubData?.publicUrl) {
               uploaded[field].push(pubData.publicUrl);
             } else {
+              // Fallback to building a public URL from NEXT_PUBLIC_SUPABASE_URL if available
               const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
               if (base) {
                 const encoded = data.path.split("/").map((s: string) => encodeURIComponent(s)).join("/");

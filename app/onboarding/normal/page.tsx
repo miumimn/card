@@ -8,7 +8,7 @@ import OnboardingForm from "@/components/OnboardingForm";
  * - Added follow_link so the Follow button opens the chosen social/profile.
  */
 export default function Page() {
-  const fields = [
+  const questions = [
     { name: "name", label: "Full name", type: "text", placeholder: "e.g. Alex Rivers", required: true },
     { name: "title", label: "Title / Role", type: "text", placeholder: "Landscape Photographer" },
     { name: "about", label: "About (one line)", type: "textarea", placeholder: "Short professional summary" },
@@ -32,5 +32,5 @@ export default function Page() {
     { name: "profile_url", label: "Public profile URL (for QR and vCard)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="normal" fields={fields} />;
+  return <OnboardingForm slug="normal" fields={questions as unknown as any} />;
 }

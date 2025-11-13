@@ -8,7 +8,7 @@ import React, { useEffect, useState } from "react";
  * - very small and self-contained to avoid SSR problems
  */
 
-export default function ThemeToggle(): JSX.Element {
+export default function ThemeToggle(): React.ReactElement {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const storageKey = "card_theme";
 

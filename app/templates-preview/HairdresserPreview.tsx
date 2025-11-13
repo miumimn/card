@@ -15,6 +15,8 @@ export type HairdresserData = {
   description?: string;
   services?: string[] | string;
   services_list?: string[] | string;
+  offerings?: string[] | string;   // <- added
+  offers?: string[] | string;      // <- added (alias)
   gallery?: string[] | string;
   gallery_images?: string[] | string;
   images?: string[] | string;
@@ -23,6 +25,7 @@ export type HairdresserData = {
   avatar?: string | string[];
   avatar_url?: string;
   profileImage?: string | string[];
+  profile_image?: string | string[]; // <- added to satisfy merged.profile_image lookups
   heroImage?: string | string[];
   hero_image?: string | string[];
   banner?: string | string[];

@@ -83,10 +83,16 @@ export default function OpticianProfilePreviewPage() {
           if (!found) found = listRes.data.find((o: any) => o.name.toLowerCase().includes(lowered));
           if (found) {
             const path = `${prefix}/${found.name}`.replace(/^\/+/, "");
-            const { publicURL } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-            if (publicURL) {
-              if (await headOk(publicURL)) return publicURL;
-              return publicURL;
+            // Safely handle getPublicUrl result shapes across SDK versions
+            const res = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path) as any;
+            const publicUrl =
+              (res && res.data && (res.data.publicUrl || res.data.publicURL)) ||
+              res?.publicURL ||
+              res?.publicUrl ||
+              "";
+            if (publicUrl) {
+              if (await headOk(publicUrl)) return publicUrl;
+              return publicUrl;
             }
           }
         }

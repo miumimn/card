@@ -3,7 +3,7 @@ import React from "react";
 import OnboardingForm from "@/components/OnboardingForm";
 
 export default function Page() {
-  const fields = [
+  const questions = [
     { name: "name", label: "Business / Your name", type: "text", placeholder: "e.g. Marigold Beauty", required: true },
     { name: "title", label: "Title / Focus", type: "text", placeholder: "Bridal & Editorial Makeup Artist" },
     { name: "about", label: "About / Bio", type: "textarea", placeholder: "Short bio and specialties" },
@@ -21,9 +21,9 @@ export default function Page() {
     { name: "tiktok", label: "TikTok (handle or URL)", type: "text", placeholder: "@handle or https://www.tiktok.com/@handle" },
     { name: "whatsapp", label: "WhatsApp (digits or URL)", type: "text", placeholder: "+15555555555 or https://wa.me/..." },
 
-    { name: "booking_link", label: "Booking / scheduling URL", type: "url", placeholder: "https://calendar.example.com/yourname" },
+    { name: "booking_contact", label: "Booking contact (phone or URL)", type: "text", placeholder: "tel:+15551234567 OR https://booking.example/yourclinic", help: "Provide a phone number to dial or a full URL to your booking page." },
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="makeup-artist" fields={fields} />;
+  return <OnboardingForm slug="makeup-artist" fields={questions as unknown as any} />;
 }

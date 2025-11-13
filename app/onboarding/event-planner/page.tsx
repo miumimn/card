@@ -12,7 +12,7 @@ import OnboardingForm from "@/components/OnboardingForm";
  * public URLs (the preview will prefer those).
  */
 export default function Page() {
-  const fields = [
+  const questions = [
     { name: "name", label: "Name / Brand", type: "text", placeholder: "e.g. Luxe Events Co.", required: true },
     { name: "tagline", label: "Tagline", type: "text", placeholder: "Weddings • Corporate Events • Private Parties" },
     { name: "about", label: "About / Bio", type: "textarea", placeholder: "Short description of your services" },
@@ -38,5 +38,5 @@ export default function Page() {
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="event-planner" fields={fields} submitLabel="Save & Preview" />;
+  return <OnboardingForm slug="event-planner" fields={questions as unknown as any} submitLabel="Save & Preview" />;
 }

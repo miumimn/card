@@ -83,10 +83,12 @@ export default function JobSeekerProfilePreviewPage() {
           if (!found) found = listRes.data.find((o: any) => o.name.toLowerCase().includes(lowered));
           if (found) {
             const path = `${prefix}/${found.name}`.replace(/^\/+/, "");
-            const { publicURL } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-            if (publicURL) {
-              if (await headOk(publicURL)) return publicURL;
-              return publicURL;
+            // Safely read getPublicUrl result — SDK versions vary in shape
+            const res = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path) as any;
+            const publicUrl = (res && res.data && (res.data.publicUrl || res.data.publicURL)) || res?.publicURL || "";
+            if (publicUrl) {
+              if (await headOk(publicUrl)) return publicUrl;
+              return publicUrl;
             }
           }
         }

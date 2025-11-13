@@ -83,10 +83,12 @@ export default function ItSpecialistProfilePreviewPage() {
           if (!found) found = listRes.data.find((o: any) => o.name.toLowerCase().includes(lowered));
           if (found) {
             const path = `${prefix}/${found.name}`.replace(/^\/+/, "");
-            const { publicURL } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-            if (publicURL) {
-              if (await headOk(publicURL)) return publicURL;
-              return publicURL;
+            // Safe extraction: getPublicUrl may return { data: { publicUrl } } or older { publicURL }
+            const res = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path) as any;
+            const publicUrl = (res && res.data && res.data.publicUrl) || res?.publicURL || "";
+            if (publicUrl) {
+              if (await headOk(publicUrl)) return publicUrl;
+              return publicUrl;
             }
           }
         }

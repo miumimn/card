@@ -105,10 +105,16 @@ export default function RealtorProfilePreviewPage() {
           if (!found) found = listRes.data.find((o: any) => o.name.toLowerCase().includes(lowered));
           if (found) {
             const path = `${prefix}/${found.name}`.replace(/^\/+/, "");
-            const { publicURL } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-            if (publicURL) {
-              if (await headOk(publicURL)) return publicURL;
-              return publicURL;
+            // Safely handle different shapes returned by getPublicUrl across SDK versions
+            const res = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path) as any;
+            const publicUrl =
+              (res && res.data && (res.data.publicUrl || res.data.publicURL)) ||
+              res?.publicURL ||
+              res?.publicUrl ||
+              "";
+            if (publicUrl) {
+              if (await headOk(publicUrl)) return publicUrl;
+              return publicUrl;
             }
           }
         }
@@ -188,12 +194,10 @@ export default function RealtorProfilePreviewPage() {
               imageUrl = await resolveImage(base, slug, `listing${i}_image`, candidate);
             }
             if (imageUrl && !looksLikeValidImageUrl(imageUrl)) {
-              // last sanity check
               imageUrl = null;
             }
           }
 
-          // skip empty/sentinel listing entries
           if (!hasText && !imageUrl) continue;
 
           collectedListings.push({
@@ -204,7 +208,6 @@ export default function RealtorProfilePreviewPage() {
           });
         }
 
-        // merge with any legacy normalized.listings, but sanitize both sides and only keep meaningful entries
         const sanitizeEntry = (it: any) => {
           if (!it) return null;
           const title = it.title ? String(it.title).trim() : "";
@@ -223,12 +226,10 @@ export default function RealtorProfilePreviewPage() {
           normalized.listings = legacy.filter((it:any) => !!(it.title || it.price || it.subtitle || it.image));
         }
 
-        // final cleanups
         if (Array.isArray(normalized.avatar) && normalized.avatar.length) normalized.avatar = normalized.avatar[0];
         if (Array.isArray(normalized.hero_image) && normalized.hero_image.length) normalized.hero_image = normalized.hero_image[0];
 
         if (process.env.NODE_ENV !== "production") {
-          // eslint-disable-next-line no-console
           console.log("Realtor preview fetched normalized row:", normalized);
         }
 

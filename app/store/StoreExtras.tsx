@@ -11,7 +11,7 @@ import "./store.css";
  * Drop <StoreExtras /> under the paragraphs you mentioned in the store page.
  */
 
-export default function StoreExtras(): JSX.Element {
+export default function StoreExtras() {
   return (
     <div className="store-extras" role="region" aria-label="Store quick actions">
       <div className="extra-card">

@@ -16,7 +16,7 @@ import OnboardingForm from "@/components/OnboardingForm";
  * - profile_url for QR
  */
 export default function Page() {
-  const fields = [
+  const questions = [
     { name: "name", label: "Name / Brand", type: "text", placeholder: "e.g. ReelWorks Films", required: true },
     { name: "tagline", label: "Tagline", type: "text", placeholder: "Videographer & Filmmaker — Commercials • Weddings • Docs" },
     { name: "about", label: "About", type: "textarea", placeholder: "Short bio or statement" },
@@ -42,5 +42,5 @@ export default function Page() {
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="videographer" fields={fields} submitLabel="Save & Preview" />;
+  return <OnboardingForm slug="videographer" fields={questions as unknown as any} submitLabel="Save & Preview" />;
 }

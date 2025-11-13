@@ -111,8 +111,12 @@ export default function HairdresserProfilePreviewPage() {
           if (!found) found = listRes.data.find((o: any) => o.name.toLowerCase().includes(lowered));
           if (found) {
             const path = `${prefix}/${found.name}`.replace(/^\/+/, "");
-            const { publicURL } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-            if (publicURL) return publicURL;
+            // Safe extraction to support multiple SDK shapes:
+            // - current SDK: { data: { publicUrl: string } }
+            // - older variants: { publicURL: string }
+            const res = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path) as any;
+            const publicUrl = (res && res.data && res.data.publicUrl) || res?.publicURL || "";
+            if (publicUrl) return publicUrl;
           }
         }
       } catch (err) {

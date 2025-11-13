@@ -224,6 +224,50 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
     return "";
   }
 
+  // Lightbox helpers (works/shop) and navigation
+  const openWorksLightbox = (index: number) => {
+    if (index < 0 || index >= galleryToShow.length) return;
+    setLightboxState({ kind: "works", index });
+    try { document.body.style.overflow = "hidden"; } catch {}
+  };
+  const openShopLightbox = (index: number) => {
+    if (index < 0 || index >= productsToShow.length) return;
+    setLightboxState({ kind: "shop", index });
+    try { document.body.style.overflow = "hidden"; } catch {}
+  };
+  const closeLightbox = () => {
+    setLightboxState(null);
+    try { document.body.style.overflow = ""; } catch {}
+  };
+  const prevLightbox = (e?: React.SyntheticEvent) => {
+    if (e) e.stopPropagation();
+    if (!lightboxState) return;
+    const len = lightboxState.kind === "works" ? galleryToShow.length : productsToShow.length;
+    setLightboxState((prev) => prev ? { kind: prev.kind, index: (prev.index - 1 + len) % len } : prev);
+  };
+  const nextLightbox = (e?: React.SyntheticEvent) => {
+    if (e) e.stopPropagation();
+    if (!lightboxState) return;
+    const len = lightboxState.kind === "works" ? galleryToShow.length : productsToShow.length;
+    setLightboxState((prev) => prev ? { kind: prev.kind, index: (prev.index + 1) % len } : prev);
+  };
+
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => {
+      if (!lightboxState) return;
+      if (ev.key === "Escape") closeLightbox();
+      if (ev.key === "ArrowLeft") prevLightbox();
+      if (ev.key === "ArrowRight") nextLightbox();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxState, galleryToShow.length, productsToShow.length]);
+
+  // pick current lightbox image URL (if open)
+  const currentLightboxUrl = lightboxState
+    ? (lightboxState.kind === "works" ? galleryToShow[lightboxState.index] : productsToShow[lightboxState.index]?.image || "")
+    : null;
+
   return (
     <>
       <link rel="stylesheet" href="/assets/styles.css" />

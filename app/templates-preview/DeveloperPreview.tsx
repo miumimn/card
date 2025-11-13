@@ -7,6 +7,7 @@ type DevData = {
   role?: string;
   bio?: string;
   avatar?: string | string[];
+  profileImage?: string | string[]; // added to accept alternate avatar field names
   github?: string;
   npm?: string;
   website?: string;
@@ -208,7 +209,7 @@ body.dev-page{ margin:0; font-family:Inter,system-ui,Arial; background:linear-gr
                       <div className="project" key={idx}>
                         <strong>{p.title}</strong>
                         {p.desc ? <div style={{ color: "var(--muted)", marginTop: 6 }}>{p.desc}</div> : null}
-                        {p.image ? <img src={p.image} alt={p.title || `project-${idx}`} onClick={() => setLightbox(p.image)} /> : null}
+                        {p.image ? <img src={p.image} alt={p.title || `project-${idx}`} onClick={() => setLightbox(p.image ?? null)} /> : null}
                       </div>
                     ))}
                   </div>

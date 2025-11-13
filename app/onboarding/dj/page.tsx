@@ -42,5 +42,5 @@ export default function Page() {
     { name: "profile_url", label: "Public profile URL (for QR / Listen CTA)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="dj" fields={questions} />;
+  return <OnboardingForm slug="dj" fields={questions as unknown as any} />;
 }

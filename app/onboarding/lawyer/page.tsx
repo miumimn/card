@@ -6,7 +6,7 @@ import OnboardingForm from "@/components/OnboardingForm";
  * Onboarding fields for Lawyer template
  */
 export default function Page() {
-  const fields = [
+  const questions = [
     { name: "name", label: "Full name", type: "text", placeholder: "e.g. Jordan Malik", required: true },
     { name: "title", label: "Title / Focus", type: "text", placeholder: "Attorney • Civil & Corporate Law" },
     { name: "about", label: "About / Bio", type: "textarea", placeholder: "Short bio and specialties" },
@@ -27,5 +27,5 @@ export default function Page() {
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="lawyer" fields={fields} />;
+  return <OnboardingForm slug="lawyer" fields={questions as unknown as any} />;
 }

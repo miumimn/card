@@ -72,7 +72,8 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
   const worksToShow = works.length ? works : (showFooter ? placeholderWorks : []);
 
   // Exhibitions
-  const exhibitionsParsed: { year?: string; title?: string; venue?: string }[] = [];
+  // NOTE: include optional `name` and `location` fields — some rows may use these alternate keys
+  const exhibitionsParsed: { year?: string; title?: string; venue?: string; name?: string; location?: string }[] = [];
   const exhibitionsText = merged.exhibitions_text ?? merged.exhibitions ?? "";
   if (typeof exhibitionsText === "string" && exhibitionsText.trim()) {
     const lines = exhibitionsText.split("\n").map((l: string) => l.trim()).filter(Boolean);
@@ -110,7 +111,7 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
   }, [merged]);
 
   // freeform shop fallback
-  const shopParsed: { title?: string; price?: string }[] = [];
+  const shopParsed: { title?: string; price?: string; image?: string }[] = [];
   const shopText = merged.shop_text ?? merged.shop ?? "";
   if (typeof shopText === "string" && shopText.trim()) {
     const lines = shopText.split("\n").map((l: string) => l.trim()).filter(Boolean);

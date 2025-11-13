@@ -66,7 +66,12 @@ export default function ConstructionPreview({ data, showFooter = true }: { data?
 
   const projectsStructured = merged.extra_fields && Array.isArray(merged.extra_fields.projects) ? merged.extra_fields.projects : null;
   const portfolioImgs = asArray(merged.portfolioImages ?? merged.portfolio ?? merged.projectPhotos ?? merged.extra_fields?.projectPhotos ?? merged.extra_fields?.portfolioImages);
-  const projectsFromText = asArray(merged.projects ?? merged.project_list ?? merged.portfolio);
+
+  // projectsFromText may be an array of objects or strings (or a string that parses to an array) —
+  // handle both by inspecting and falling back to asArray for string sources.
+  const projectsFromTextRaw = merged.projects ?? merged.project_list ?? merged.portfolio;
+  const projectsFromText: any[] = Array.isArray(projectsFromTextRaw) ? projectsFromTextRaw : asArray(projectsFromTextRaw);
+
   const projects: { title: string; desc?: string; image?: string }[] = [];
 
   if (projectsStructured && projectsStructured.length) {
@@ -82,8 +87,13 @@ export default function ConstructionPreview({ data, showFooter = true }: { data?
       if (typeof line === "string") {
         const [title, desc] = line.split("|").map((s) => s.trim());
         projects.push({ title: title || line, desc: desc || "" });
-      } else if (typeof line === "object") {
-        projects.push({ title: line.title || line.name || "", desc: line.desc || "", image: Array.isArray(line.image) ? line.image[0] : line.image });
+      } else if (typeof line === "object" && line !== null) {
+        // line may be an object coming from parsed JSON or structured data
+        projects.push({
+          title: (line.title as string) || (line.name as string) || "",
+          desc: (line.desc as string) || (line.description as string) || "",
+          image: Array.isArray(line.image) ? line.image[0] : (line.image || ""),
+        });
       }
     }
   } else if (portfolioImgs.length) {

@@ -5,10 +5,22 @@ import { useRouter } from "next/navigation";
 export type PhotographerData = {
   name?: string;
   tagline?: string;
+  specialty?: string;                    // <-- add this (merged.specialty)
+  specialty_list?: string[] | string;    // <-- add this (merged.specialty_list)
   about?: string;
   specialties?: string[] | string;
   gallery?: string[] | string;
+  portfolioImages?: string[] | string;   // alias used by merged.portfolioImages
+  portfolio_images?: string[] | string;  // alias used by merged.portfolio_images
+  photos?: string[] | string;            // alias used by merged.photos
+  images?: string[] | string;            // alias used by merged.images
   avatar?: string | string[];
+  avatar_url?: string;                   // alias used by merged.avatar_url
+  profileImage?: string | string[];      // alias used by merged.profileImage
+  profile_image?: string | string[];     // alias used by merged.profile_image
+  heroImage?: string | string[];
+  hero_image?: string | string[];        // alias used by merged.hero_image
+  banner?: string | string[];            // alias used by merged.banner
   email?: string;
   phone?: string;
   instagram?: string;

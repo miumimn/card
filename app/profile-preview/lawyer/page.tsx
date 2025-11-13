@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import LawyerPreview from "@/app/templates-preview/LawyerPreview";
+import JobSeekerPreview from "@/app/templates-preview/JobSeekerPreview";
 
 const STORAGE_BUCKET = "onboarding-uploads";
 
@@ -42,7 +42,7 @@ function parsePossibleList(val: any) {
   return null;
 }
 
-export default function LawyerProfilePreviewPage() {
+export default function JobSeekerProfilePreviewPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClientComponentClient();
@@ -53,14 +53,14 @@ export default function LawyerProfilePreviewPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) { setLoading(false); setError("No id provided in the URL."); return; }
+    if (!id) { setLoading(false); setError("No id provided."); return; }
 
     async function headOk(url?: string) {
       if (!url) return false;
       try { const r = await fetch(url, { method: "HEAD" }); return r.ok; } catch { return false; }
     }
 
-    const resolveImageValue = async (base: string, slug: string, field: string, raw: any) => {
+    const resolve = async (base: string, slug: string, field: string, raw: any) => {
       if (!raw) return null;
       const s = String(raw).trim();
       if (!s) return null;
@@ -83,16 +83,23 @@ export default function LawyerProfilePreviewPage() {
           if (!found) found = listRes.data.find((o: any) => o.name.toLowerCase().includes(lowered));
           if (found) {
             const path = `${prefix}/${found.name}`.replace(/^\/+/, "");
-            const { publicURL } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-            if (publicURL) {
-              if (await headOk(publicURL)) return publicURL;
-              return publicURL;
+            // Safely read getPublicUrl result — SDK versions vary in shape.
+            // Support shapes: { data: { publicUrl } } or { publicURL } (older).
+            const res = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path) as any;
+            const publicUrl =
+              (res && res.data && (res.data.publicUrl || res.data.publicURL)) ||
+              res?.publicURL ||
+              "";
+            if (publicUrl) {
+              if (await headOk(publicUrl)) return publicUrl;
+              return publicUrl;
             }
           }
         }
       } catch (err) {
         console.warn("list fallback failed", err);
       }
+
       return candidate;
     };
 
@@ -100,8 +107,7 @@ export default function LawyerProfilePreviewPage() {
       setLoading(true); setError(null);
       try {
         const { data: fetched, error: fetchError } = await supabase.from("onboardings").select("*").eq("id", id).single();
-        if (fetchError) { console.error(fetchError); setError(fetchError.message || "Error fetching onboarding row"); setLoading(false); return; }
-
+        if (fetchError) { setError(fetchError.message || "Fetch failed"); setLoading(false); return; }
         let normalized: any = { ...(fetched ?? {}) };
         if (fetched?.extra_fields) {
           try {
@@ -110,7 +116,7 @@ export default function LawyerProfilePreviewPage() {
           } catch {}
         }
 
-        const keys = ["avatar","heroImage","portfolio","testimonials"];
+        const keys = ["portfolio","avatar","heroImage","experience","projects","cv"];
         keys.forEach(k => {
           if (normalized[k] !== undefined && normalized[k] !== null) {
             const p = parsePossibleList(normalized[k]);
@@ -119,27 +125,27 @@ export default function LawyerProfilePreviewPage() {
         });
 
         const base = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-        const slug = normalized.slug || "lawyer";
+        const slug = normalized.slug || "jobseeker";
 
-        const imageFields = ["avatar","heroImage","portfolio"];
+        const imageFields = ["portfolio","avatar","heroImage","cv"];
         for (const field of imageFields) {
           if (!normalized[field]) continue;
           if (Array.isArray(normalized[field])) {
-            const resolved = await Promise.all(normalized[field].slice(0, 12).map((v: any) => resolveImageValue(base, slug, field, v)));
+            const resolved = await Promise.all(normalized[field].slice(0, 12).map((v: any) => resolve(base, slug, field, v)));
             normalized[field] = resolved.filter(Boolean);
           } else if (typeof normalized[field] === "string") {
-            normalized[field] = String(await resolveImageValue(base, slug, field, normalized[field]));
+            normalized[field] = String(await resolve(base, slug, field, normalized[field]));
           }
         }
 
         if (Array.isArray(normalized.avatar) && normalized.avatar.length) normalized.avatar = normalized.avatar[0];
         if (Array.isArray(normalized.heroImage) && normalized.heroImage.length) normalized.heroImage = normalized.heroImage[0];
         if (Array.isArray(normalized.portfolio) && normalized.portfolio.length) normalized.portfolio = normalized.portfolio.slice(0, 12);
+        if (Array.isArray(normalized.cv) && normalized.cv.length) normalized.cv = normalized.cv[0];
 
-        console.log("Lawyer preview fetched normalized row:", normalized);
+        console.log("Jobseeker preview fetched normalized row:", normalized);
         setRow(normalized);
       } catch (err: any) {
-        console.error("Fetch failed", err);
         setError(String(err));
       } finally {
         setLoading(false);
@@ -161,5 +167,5 @@ export default function LawyerProfilePreviewPage() {
     </div>
   );
 
-  return <LawyerPreview data={row} showFooter={false} />;
+  return <JobSeekerPreview data={row} showFooter={false} />;
 }

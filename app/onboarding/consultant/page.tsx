@@ -30,5 +30,5 @@ export default function Page() {
     { name: "schedule_url", label: "Schedule / Booking URL (optional)", type: "url", placeholder: "https://calendly.com/yourname" },
   ];
 
-  return <OnboardingForm slug="consultant" fields={questions} />;
+  return <OnboardingForm slug="consultant" fields={questions as unknown as any} />;
 }

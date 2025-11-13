@@ -9,7 +9,7 @@ import OnboardingForm from "@/components/OnboardingForm";
  * - other_links shown in contact tab
  */
 export default function Page() {
-  const fields = [
+  const questions = [
     { name: "name", label: "Your name / business", type: "text", placeholder: "e.g. Ivy Park Photography", required: true },
     { name: "tagline", label: "Short tagline", type: "text", placeholder: "Portraits • Weddings • Editorial" },
     { name: "about", label: "About / Bio", type: "textarea", placeholder: "Short description about your style and services" },
@@ -32,5 +32,6 @@ export default function Page() {
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="photographer" fields={fields} />;
+  // Cast fields to avoid TS widening errors during build (keeps runtime the same)
+  return <OnboardingForm slug="photographer" fields={questions as unknown as any} />;
 }

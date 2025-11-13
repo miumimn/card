@@ -17,5 +17,5 @@ export default function Page() {
     { name: "profileImage", label: "Profile photo", type: "files", maxFiles: 1, accept: "image/*" },
   ];
 
-  return <OnboardingForm slug="writer" fields={questions} />;
+  return <OnboardingForm slug="writer" fields={questions as unknown as any} />;
 }

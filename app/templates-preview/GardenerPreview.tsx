@@ -7,16 +7,32 @@ export type GardenerData = {
   subtitle?: string;
   about?: string;
   services?: string[] | string;
+  service_list?: string[] | string;       // alias added
+  offerings?: string[] | string;          // alias added
   portfolio?: string[] | string;
+  portfolio_images?: string[] | string;   // alias added
+  portfolioImages?: string[] | string;    // alias added
+  gallery?: string[] | string;            // alias added
+  gallery_images?: string[] | string;     // alias added
+  images?: string[] | string;             // alias added
   tips?: string[] | string;
+  seasonal_tips?: string[] | string;      // alias added
   avatar?: string | string[];
+  avatar_url?: string;                    // alias added
+  profileImage?: string | string[];       // alias added
+  profile_image?: string | string[];      // alias added
   heroImage?: string | string[];
+  hero_image?: string | string[];         // alias added
+  banner?: string | string[];             // alias added
   email?: string;
   phone?: string;
   whatsapp?: string;
   booking_link?: string;
   profile_url?: string;
+  profileUrl?: string;                    // alias added
   contact_cards?: string[] | string;
+  contact_cards_list?: string[] | string; // alias added
+  contactCards?: string[] | string;       // alias added
   extra_fields?: any;
 };
 
@@ -59,9 +75,10 @@ export default function GardenerPreview({ data, showFooter = true }: { data?: Ga
   const subtitle = merged.subtitle ? String(merged.subtitle) : (showFooter ? "Landscaping • Garden Maintenance • Design" : "");
   const about = merged.about ? String(merged.about) : (showFooter ? "Creating beautiful, low-maintenance gardens — design, planting and ongoing care." : "");
 
+  // tolerate multiple alias keys (service_list, offerings)
   const services = parseList(merged.services ?? merged.service_list ?? merged.offerings);
   const tips = parseList(merged.tips ?? merged.seasonal_tips);
-  const portfolio = parseList(merged.portfolio ?? merged.portfolio_images ?? merged.gallery).slice(0, 6);
+  const portfolio = parseList(merged.portfolio ?? merged.portfolio_images ?? merged.portfolioImages ?? merged.gallery ?? merged.gallery_images ?? merged.images).slice(0, 6);
 
   let avatar = parseList(merged.avatar ?? merged.avatar_url ?? merged.profileImage ?? merged.profile_image)[0] ?? "";
   let heroImage = parseList(merged.heroImage ?? merged.hero_image ?? merged.banner)[0] ?? "";
@@ -173,7 +190,9 @@ export default function GardenerPreview({ data, showFooter = true }: { data?: Ga
             {email ? <p style={{ margin: 0, color: 'var(--gd-muted)' }}>Email: <a href={`mailto:${email}`}>{email}</a></p> : null}
             {phone ? <p style={{ marginTop: 8, color: 'var(--gd-muted)' }}>Phone: <a href={`tel:${phone.replace(/\s+/g, "")}`}>{phone}</a></p> : null}
             <div style={{ marginTop: 10 }}>
-              <button className="btn" onClick={() => router.push("/onboarding/gardener")}>Use this template</button>
+              {showFooter ? (
+                <button className="btn" onClick={() => router.push("/onboarding/gardener")}>Use this template</button>
+              ) : null}
             </div>
           </article>
         </section>

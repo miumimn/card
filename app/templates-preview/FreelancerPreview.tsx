@@ -7,15 +7,31 @@ export type FreelancerData = {
   title?: string;
   about?: string;
   services?: string[] | string;
+  service_list?: string[] | string;      // accept snake_case alias
+  offerings?: string[] | string;         // accept alternative alias
   portfolio?: string[] | string;
+  portfolioImages?: string[] | string;   // alias
+  portfolio_images?: string[] | string;  // alias
   avatar?: string | string[];
+  avatar_url?: string;                   // alias
+  profileImage?: string | string[];      // alias (added)
+  profile_image?: string | string[];     // alias
   heroImage?: string | string[];
+  hero_image?: string | string[];        // alias
+  banner?: string | string[];            // alias for hero/banner imagery
+  banner_image?: string | string[];      // alias
+  gallery?: string[] | string;           // alias for portfolio/gallery
+  gallery_images?: string[] | string;    // alias
+  images?: string[] | string;            // alias
   email?: string;
   phone?: string;
   whatsapp?: string;
   booking_link?: string;
   profile_url?: string;
+  profileUrl?: string;                   // alias (added) to satisfy merged.profileUrl lookups
   contact_cards?: string[] | string;
+  contact_cards_list?: string[] | string; // alias
+  contactCards?: string[] | string;       // alias
   extra_fields?: any;
 };
 
@@ -87,7 +103,7 @@ export default function FreelancerPreview({
 
   // image aliases
   const avatarCandidates = parseImageField(merged.avatar ?? merged.avatar_url ?? merged.profileImage ?? merged.profile_image);
-  const heroCandidates = parseImageField(merged.heroImage ?? merged.hero_image ?? merged.banner);
+  const heroCandidates = parseImageField(merged.heroImage ?? merged.hero_image ?? merged.banner ?? merged.banner_image);
   const portfolioCandidates = parseImageField(
     merged.portfolio ??
     merged.portfolioImages ??

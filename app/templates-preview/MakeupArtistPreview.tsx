@@ -7,10 +7,20 @@ export type MakeupArtistData = {
   title?: string;
   about?: string;
   services?: string[] | string;
+  service_list?: string[] | string;
+  offerings?: string[] | string;
   reviews?: string[] | string;
+  testimonials?: string[] | string;
   portfolio?: string[] | string;
+  gallery?: string[] | string;   // <-- added alias for merged.gallery
+  images?: string[] | string;    // <-- added alias for merged.images
   avatar?: string | string[];
+  avatar_url?: string;
+  profileImage?: string | string[];
+  profile_image?: string | string[];
   heroImage?: string | string[];
+  hero_image?: string | string[];
+  banner?: string | string[];
   email?: string;
   phone?: string;
   instagram?: string;
@@ -35,7 +45,7 @@ export default function MakeupArtistPreview({
 
   useEffect(() => {
     try {
-      setClientHref(window.location.href || "");
+      setClientHref(typeof window !== "undefined" ? window.location.href || "" : "");
     } catch {
       setClientHref("");
     }
@@ -85,7 +95,7 @@ export default function MakeupArtistPreview({
 
   const portfolioRaw = parseImageField(merged.portfolio ?? merged.gallery ?? merged.images ?? merged.extra_fields?.portfolio);
 
-  const avatarCandidates = parseImageField(merged.avatar ?? merged.avatar_url ?? merged.profileImage);
+  const avatarCandidates = parseImageField(merged.avatar ?? merged.avatar_url ?? merged.profileImage ?? merged.profile_image);
   const heroCandidates = parseImageField(merged.heroImage ?? merged.hero_image ?? merged.banner);
 
   let avatar = avatarCandidates.length ? avatarCandidates[0] : "";
@@ -133,6 +143,7 @@ export default function MakeupArtistPreview({
     else if (services.length) setTab("services");
     else if (reviews.length) setTab("reviews");
     else setTab("contact");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolio.length, services.length, reviews.length]);
 
   const openLightbox = (src?: string | null) => { if (!src) return; setLightbox(src); };

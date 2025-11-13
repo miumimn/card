@@ -12,7 +12,7 @@ import OnboardingForm from "@/components/OnboardingForm";
  *  - phone, website, booking_link, profile_url
  */
 export default function Page() {
-  const fields = [
+  const questions = [
     { name: "name", label: "Artist / Band name", type: "text", placeholder: "e.g. Nova Lane", required: true },
     { name: "role", label: "Role / Genre", type: "text", placeholder: "Singer • Songwriter — Indie / Alternative" },
     { name: "about", label: "Short bio", type: "textarea", placeholder: "One-line artist bio" },
@@ -42,9 +42,9 @@ export default function Page() {
     { name: "tiktok", label: "TikTok (handle or URL)", type: "text", placeholder: "@handle or https://www.tiktok.com/@handle" },
 
     { name: "website", label: "Website (optional)", type: "url", placeholder: "https://your-site.com" },
-    { name: "booking_link", label: "Booking / scheduling URL", type: "url", placeholder: "https://calendar.example.com/yourname" },
+    { name: "booking_contact", label: "Booking contact (phone or URL)", type: "text", placeholder: "tel:+15551234567 OR https://booking.example/yourclinic", help: "Provide a phone number to dial or a full URL to your booking page." },
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="musician" fields={fields} />;
+  return <OnboardingForm slug="musician" fields={questions as unknown as any} />;
 }

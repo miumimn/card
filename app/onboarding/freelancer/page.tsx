@@ -27,11 +27,11 @@ export default function Page() {
     { name: "email", label: "Email", type: "email", placeholder: "you@yourdomain.com" },
     { name: "phone", label: "Phone", type: "tel", placeholder: "+1 555 555 5555" },
     { name: "whatsapp", label: "WhatsApp (digits or full url)", type: "text", placeholder: "+15555555555 or https://wa.me/15555555555" },
-    { name: "booking_link", label: "Booking / contact url (optional)", type: "url", placeholder: "https://example.com/book" },
+    { name: "booking_link", label: "Booking contact (phone or URL)", type: "text", placeholder: "tel:+15551234567 OR https://booking.example/...", help: "Provide a phone number to dial or a full URL to your booking page." },
 
     { name: "contact_cards", label: "Contact cards (one per line)", type: "textarea", placeholder: "Rate card\nSample deliverables" },
     { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];
 
-  return <OnboardingForm slug="freelancer" fields={questions} />;
+  return <OnboardingForm slug="freelancer" fields={questions as unknown as any} />;
 }
