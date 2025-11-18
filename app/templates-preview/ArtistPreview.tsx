@@ -1,15 +1,22 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import SvgIcon from "@/components/Icon"; // centralized SVG loader (public/svg/<name>.svg)
 
 /**
  * ArtistPreview
  *
  * - Restored styles + shop tab + lightbox.
  * - Works and shop product images open the same accessible lightbox.
- * - Socials shown as SVG logos in hero; bio moved into About tab only.
+ * - Socials shown using the centralized SvgIcon component (loads from public/svg).
+ * - Bio moved into About tab only.
  * - Contacts tab shows email (mailto) and phone (tel). Social icons and contact icons are clickable.
  * - Product title/price link to contact action (contact_url > profile_url > mailto).
+ *
+ * Mobile-first: avatar left, name/title centered; mobile-only socials row appears beneath the hero-top (scrollable).
+ * Desktop: original inline social-row remains to the right in the meta (unchanged).
+ *
+ * Behavior: mobile socials row auto-scrolls to the end on mount so user can swipe left to reveal earlier icons.
  */
 
 export default function ArtistPreview({ data, showFooter = true }: { data?: any; showFooter?: boolean }) {
@@ -38,13 +45,20 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
     if (!value && value !== "") return [];
     if (Array.isArray(value)) return value.map(String).filter(Boolean);
     if (typeof value === "object" && value !== null) {
-      try { return Array.isArray(value) ? value.map(String).filter(Boolean) : []; } catch { return []; }
+      try {
+        return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
+      } catch {
+        return [];
+      }
     }
     if (typeof value === "string") {
       const s = value.trim();
       if (!s) return [];
-      try { const p = JSON.parse(s); if (Array.isArray(p)) return p.map(String).filter(Boolean); } catch {}
-      if (s.includes(",")) return s.split(",").map(p => p.trim()).filter(Boolean);
+      try {
+        const p = JSON.parse(s);
+        if (Array.isArray(p)) return p.map(String).filter(Boolean);
+      } catch {}
+      if (s.includes(",")) return s.split(",").map((p) => p.trim()).filter(Boolean);
       return [s];
     }
     return [];
@@ -72,7 +86,6 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
   const worksToShow = works.length ? works : (showFooter ? placeholderWorks : []);
 
   // Exhibitions
-  // NOTE: include optional `name` and `location` fields — some rows may use these alternate keys
   const exhibitionsParsed: { year?: string; title?: string; venue?: string; name?: string; location?: string }[] = [];
   const exhibitionsText = merged.exhibitions_text ?? merged.exhibitions ?? "";
   if (typeof exhibitionsText === "string" && exhibitionsText.trim()) {
@@ -201,20 +214,16 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
     return () => window.removeEventListener("keydown", onKey);
   }, [lightboxState, worksToShow.length, shopToShow.length]);
 
-  // Social icons (SVGs)
-  const Icons: Record<string, React.FC<{ size?: number }>> = {
-    instagram: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.2"/><path d="M7.5 12a4.5 4.5 0 1 0 9 0 4.5 4.5 0 0 0-9 0z" stroke="currentColor" strokeWidth="1.2"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor"/></svg>),
-    behance: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M3 6h6v12H3zM9 6h6a3 3 0 0 1 0 6H9z"/><path d="M17 13.5a1.5 1.5 0 0 0 0-3H15v3z"/></svg>),
-    website: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.2"/><path d="M2 12h20M12 2v20" stroke="currentColor" strokeWidth="1.2"/></svg>),
-    facebook: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M22 12a10 10 0 1 0-11.5 9.9V14.6h-2.7v-2.6h2.7V9.6c0-2.7 1.6-4.2 4-4.2 1.2 0 2.4.2 2.4.2v2.7h-1.4c-1.4 0-1.9.9-1.9 1.8v2.1h3.2l-.5 2.6h-2.7v7.3A10 10 0 0 0 22 12z"/></svg>),
-    twitter: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M22 5.9c-.6.3-1.2.6-1.9.7.7-.4 1.2-1 1.5-1.7-.7.4-1.4.6-2.2.8C18.7 5 17.8 4.5 16.8 4.5c-1.4 0-2.5 1.1-2.5 2.5 0 .2 0 .4.1.6C11 7.4 8.3 6 6.4 4c-.2.3-.3.7-.3 1.1 0 1.1.6 2.1 1.6 2.7-.5 0-1-.1-1.4-.4v.1c0 1.2.9 2.2 2 2.4-.4.1-.9.1-1.3.1-.3 0-.6 0-.9-.1.6 1.8 2.3 3.1 4.2 3.2-1.5 1.2-3.3 1.9-5.3 1.9H6c1.9 1.2 4.2 1.9 6.7 1.9 8 0 12.4-6.6 12.4-12.4v-.6c.9-.6 1.6-1.3 2.2-2.2-.8.3-1.6.6-2.4.7z"/></svg>),
-    tiktok: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M16 8.5c-.6 0-1.1-.2-1.5-.5v6.5a3.5 3.5 0 1 1-3.5-3.5v-1.5a5 5 0 1 0 5 5V8.5z"/></svg>),
-    linkedin: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M4.98 3.5C3.88 3.5 3 4.38 3 5.48c0 1.1.88 1.98 1.98 1.98h.02C6.08 7.46 7 6.58 7 5.48 7 4.38 6.12 3.5 4.98 3.5zM3.5 9h3v11h-3zM9 9h2.88v1.52h.04c.4-.76 1.4-1.52 2.88-1.52 3.08 0 3.64 2.02 3.64 4.64V20h-3v-4.2c0-1 .02-2.28-1.38-2.28-1.38 0-1.6 1.08-1.6 2.2V20h-3z"/></svg>),
-    pinterest: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 2C6 2 2 6 2 11c0 3.1 1.7 5.7 4.2 6.9-.1-.6-.2-1.6 0-2.3.2-.6 1.4-4 .1-6C6 8 9 7 10.6 8c.7.4 1 1 1 1.7 0 1-.6 2-1 2.4-.3.4-.8 1.2-.4 2.6.2.8 1 1.3 2 1.3 2.5 0 4.4-3 4.4-7.1 0-3.1-2.1-5.2-5.1-5.2z"/></svg>),
-    youtube: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M21.8 8s-.2-1.6-.8-2.3c-.8-.9-1.7-.9-2.1-1-2-.2-5-.2-5-.2s-3 0-5 .2c-.4.1-1.3.1-2.1 1C2.4 6.4 2.2 8 2.2 8S2 9.8 2 11.6v1.8c0 1.8.2 3.6.2 3.6s.2 1.6.8 2.3c.8.9 1.9.9 2.4 1 1.7.1 7 .2 7 .2s3.1 0 5-.2c.4-.1 1.3-.1 2.1-1 .6-.7.8-2.3.8-2.3s.2-1.8.2-3.6v-1.8c0-1.8-.2-3.6-.2-3.6z"/></svg>),
-    email: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden><path d="M3 7.5v9A2.5 2.5 0 0 0 5.5 19h13A2.5 2.5 0 0 0 21 16.5v-9A2.5 2.5 0 0 0 18.5 5h-13A2.5 2.5 0 0 0 3 7.5z" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M21 7.5l-9 6-9-6" stroke="currentColor" strokeWidth="1.2" fill="none"/></svg>),
-    phone: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M22 16.92v3a1 1 0 0 1-1.11 1A19.86 19.86 0 0 1 13 17.5 19.27 19.27 0 0 1 7 11.5 19.86 19.86 0 0 1 3.1 4.11 1 1 0 0 1 4.1 3h3a1 1 0 0 1 1 .75c.12.6.3 1.2.54 1.79a1 1 0 0 1-.24 1L7.5 7.5a14 14 0 0 0 8 8l1.96-1.96a1 1 0 0 1 1-.24c.59.24 1.19.42 1.79.54a1 1 0 0 1 .75 1v3z"/></svg>),
-  };
+  // Scroll-to-end for mobile socials: create ref and effect
+  const socialsMobileRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = socialsMobileRef.current;
+    if (!el) return;
+    // Wait for layout then scroll to end so user swipes left to reveal earlier icons
+    requestAnimationFrame(() => {
+      try { el.scrollLeft = el.scrollWidth; } catch {}
+    });
+  }, [Object.values(socialsData).join("|")]);
 
   function socialHref(key: string, value: string) {
     if (!value) return "";
@@ -254,14 +263,40 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
     <>
       <link rel="stylesheet" href="/assets/styles.css" />
       <style dangerouslySetInnerHTML={{ __html: `
-        :root{ --a-bg: #0b0712; --a-surface: #0f0b16; --a-accent: #ff6bcb; --a-muted: #b9a7c9; --a-text: #ffffff; --card-radius: 14px; }
+        :root{ --a-bg: #0b0712; --a-surface: #0f0b16; --a-accent: #ff6bcb; --a-muted: #b9a7c9; --a-text: #ffffff; --card-radius: 14px; --gold: #d4af37; }
         body.artist-new{ margin:0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(180deg,#07060a,#0b0712); color:var(--a-text); -webkit-font-smoothing:antialiased; }
         .wrap{ max-width:980px; margin:14px auto; padding:16px; }
         .hero { border-radius:16px; overflow:hidden; background: linear-gradient(180deg, rgba(255,107,203,0.03), rgba(0,0,0,0.12)); min-height:40vw; display:flex; flex-direction:column; justify-content:flex-end; padding:16px; box-shadow: 0 16px 40px rgba(2,6,23,0.6); }
+
+        /* Mobile-first hero: avatar left, meta centered */
         .hero-top { display:flex; gap:12px; align-items:center; }
         .avatar{ width:88px; height:88px; border-radius:999px; background-size:cover; background-position:center; border:4px solid rgba(255,255,255,0.06); box-shadow:0 12px 30px rgba(176,108,255,0.06); flex:0 0 88px; }
-        .meta{ display:flex; flex-direction:column; gap:6px; } .name{ margin:0; font-weight:900; font-size:20px; color:var(--a-accent); } .role{ margin:0; color:var(--a-muted); font-weight:700; font-size:13px; }
-        .social-row{ display:flex; gap:8px; margin-top:8px; align-items:center; } .social{ width:40px; height:40px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(90deg,var(--a-accent), #ff9ae1); color:#14020a; border:1px solid rgba(0,0,0,0.12); text-decoration:none; font-weight:700; font-size:13px; box-shadow:0 6px 18px rgba(176,108,255,0.12); }
+        .meta{ display:flex; flex-direction:column; gap:6px; flex:1; text-align:center; align-items:center; justify-content:center; }
+        .name{ margin:0; font-weight:900; font-size:20px; color:var(--a-accent); }
+        .role{ margin:0; color:var(--a-muted); font-weight:700; font-size:13px; }
+
+        /* Desktop: meta right of avatar and original inline social row visible */
+        .social-row{ display:none; gap:8px; margin-top:8px; align-items:center; }
+        .social{
+          width:44px;
+          height:44px;
+          border-radius:50%;
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          background:linear-gradient(180deg, rgba(212,175,55,0.06), rgba(212,175,55,0.02));
+          color:inherit;
+          border:1.6px solid var(--gold); /* thinner golden circle */
+          box-shadow: 0 6px 18px rgba(212,175,55,0.12);
+          padding:0;
+        }
+        .social img, .social svg{ width:20px; height:20px; display:block; }
+
+        /* Mobile-only socials strip (bigger, scrollable) */
+        .socials-mobile { display:flex; gap:12px; margin-top:12px; align-items:center; overflow-x:auto; padding:6px 4px; -webkit-overflow-scrolling:touch; justify-content:center; }
+        .social-mobile { flex:0 0 auto; width:56px; height:56px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; border:1.6px solid var(--gold); /* thinner golden circle */ box-shadow: 0 6px 14px rgba(212,175,55,0.08); background: transparent; }
+        .social-mobile img, .social-mobile svg { width:30px; height:30px; display:block; }
+
         .hero-card{ margin-top:12px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.02); color:var(--a-muted); backdrop-filter: blur(4px); }
         .tabs{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; } .tab{ padding:8px 12px; border-radius:10px; background:transparent; border:1px solid rgba(255,255,255,0.03); color:var(--a-muted); font-weight:800; cursor:pointer; } .tab.active{ background: linear-gradient(90deg,var(--a-accent), rgba(255,107,203,0.08)); color:#14020a; border:none; box-shadow:0 8px 24px rgba(176,108,255,0.06); }
         .panels{ margin-top:12px; padding-bottom:26px; } .panel{ display:none; color:var(--a-muted); line-height:1.6; } .panel.active{ display:block; }
@@ -269,7 +304,14 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
         .exhibitions{ margin-top:10px; display:flex; flex-direction:column; gap:8px; } .exhibit{ background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01)); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.02); color:var(--a-muted); }
         .contact-row{ display:flex; gap:12px; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap; } .contact-list{ display:flex; gap:8px; flex-direction:column; } .contact-item{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.02); display:flex; gap:10px; align-items:center; }
         .primary-btn{ padding:10px 14px; border-radius:10px; background:linear-gradient(90deg,var(--a-accent), #ff9ae1); color:#14020a; font-weight:900; text-decoration:none; border:none; } .qr{ display:flex; gap:10px; align-items:center; } .qr img{ width:84px; height:84px; border-radius:8px; background:#fff; display:block; }
-        @media (min-width:880px){ .works-grid{ grid-template-columns:repeat(3,1fr); } .hero{ min-height:220px; padding:22px; } .avatar{ width:110px; height:110px; } }
+
+        @media (min-width:880px){
+          .social-row{ display:flex; }
+          .socials-mobile{ display:none; }
+          .meta{ text-align:left; align-items:flex-start; }
+          .avatar{ width:110px; height:110px; }
+        }
+
         .preview-footer{ display:flex; gap:10px; justify-content:flex-end; margin:18px 0 32px; flex-wrap:wrap; } .secondary-btn{ padding:10px 14px; border-radius:10px; background:transparent; color:var(--a-muted); border:1px solid rgba(255,255,255,0.06); cursor:pointer; font-weight:700; }
         /* lightbox */
         .lightbox-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:2000; padding: 20px; }
@@ -291,13 +333,11 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                 {name ? <h1 className="name">{name}</h1> : null}
                 {role ? <div className="role">{role}</div> : null}
 
-                {/* Socials as clickable logos horizontally in the hero */}
+                {/* Desktop inline socials (unchanged) */}
                 {Object.values(socialsData).some(Boolean) ? (
                   <nav className="social-row" aria-label="social links">
                     {Object.entries(socialsData).map(([k, v]) => {
                       if (!v) return null;
-                      const Icon = Icons[k];
-                      if (!Icon) return null;
                       const href = socialHref(k, v);
                       // For mailto/tel we don't want target="_blank"
                       const isExternal = !(k === "email" || k === "phone");
@@ -310,7 +350,7 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                           rel={isExternal ? "noreferrer" : undefined}
                           aria-label={k}
                         >
-                          <Icon />
+                          <SvgIcon name={k} alt={k} width={20} height={20} useImg />
                         </a>
                       );
                     })}
@@ -319,6 +359,28 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
               </div>
             </div>
 
+            {/* Mobile-only socials row: larger icons, scrollable - now with ref to auto-scroll to end */}
+            {Object.values(socialsData).some(Boolean) ? (
+              <div ref={socialsMobileRef} className="socials-mobile" aria-hidden={false} aria-label="social links (mobile)">
+                {Object.entries(socialsData).map(([k, v]) => {
+                  if (!v) return null;
+                  const href = socialHref(k, v);
+                  const isExternal = !(k === "email" || k === "phone");
+                  return (
+                    <a
+                      key={k}
+                      className="social-mobile"
+                      href={href}
+                      target={isExternal ? "_blank" : undefined}
+                      rel={isExternal ? "noreferrer" : undefined}
+                      aria-label={k}
+                    >
+                      <SvgIcon name={k} alt={k} width={30} height={30} useImg />
+                    </a>
+                  );
+                })}
+              </div>
+            ) : null}
             {/* About removed from hero: about will only show under the About tab */}
           </section>
 
@@ -461,7 +523,9 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                 {/* Email shown and clickable */}
                 {email ? (
                   <div className="contact-item">
-                    <span style={{ width: 20, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Icons.email /></span>
+                    <span style={{ width: 20, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                      <SvgIcon name="email" alt="email" width={18} height={18} useImg />
+                    </span>
                     <div>
                       <strong>Email</strong>
                       <div style={{ color: "var(--a-muted)" }}>
@@ -476,7 +540,9 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                 {/* Phone clickable */}
                 {phone ? (
                   <div className="contact-item">
-                    <span style={{ width: 20, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Icons.phone /></span>
+                    <span style={{ width: 20, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                      <SvgIcon name="phone" alt="phone" width={18} height={18} useImg />
+                    </span>
                     <div>
                       <strong>Phone</strong>
                       <div style={{ color: "var(--a-muted)" }}>
@@ -500,38 +566,20 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                   ) : (showFooter ? (
                     <a className="primary-btn" href="#" aria-label="Enquire about commissions">Enquire / Commission</a>
                   ) : null)}
-
-                  <div className="qr" aria-label="QR code">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(merged.profile_url || (typeof window !== "undefined" ? window.location.href : ""))}`}
-                      alt="QR to profile"
-                    />
-                    <div style={{ fontSize: 13, color: "var(--a-muted)" }}>
-                      <div>Download QR</div>
-                      <a
-                        className="primary-btn"
-                        href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(merged.profile_url || (typeof window !== "undefined" ? window.location.href : ""))}`}
-                        download
-                        style={{ padding: "8px 10px", fontSize: 13 }}
-                      >
-                        Download
-                      </a>
-                    </div>
-                  </div>
                 </div>
               )}
             </article>
           </section>
 
-          {showFooter ? (
-            <div className="preview-footer" role="toolbar" aria-label="Preview actions">
-              <button className="secondary-btn" onClick={() => router.push("/templates-preview")}>Back</button>
+          <div className="preview-footer" role="toolbar" aria-label="Preview actions">
+            {/* Back button removed as requested */}
+            {showFooter ? (
               <button className="primary-btn" onClick={() => {
                 const onboardingRoute = merged.id ? `/onboarding/artist?id=${merged.id}` : "/onboarding/artist";
                 router.push(onboardingRoute);
               }}>Use this template</button>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </main>
       </div>
 

@@ -39,6 +39,21 @@ function parseList(val: any): string[] {
   return [];
 }
 
+/** Render social icon from public/svg/{name}.svg with a tiny inline fallback */
+function SocialIcon({ name, size = 20 }: { name: string; size?: number }) {
+  const src = `/svg/${name}.svg`;
+  return (
+    <img
+      src={src}
+      width={size}
+      height={size}
+      alt={`${name} icon`}
+      style={{ display: "block" }}
+      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+    />
+  );
+}
+
 export default function NormalPreview({ data, showFooter = true }: { data?: NormalData | null; showFooter?: boolean }) {
   const router = useRouter();
   const [tab, setTab] = useState<"about" | "highlights" | "contact">("about");
@@ -124,20 +139,6 @@ export default function NormalPreview({ data, showFooter = true }: { data?: Norm
     a.remove();
     URL.revokeObjectURL(url);
   }
-
-  // Small SVG icons
-  const IconInstagram = ({ size = 16 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.2" fill="none"/><circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.2" fill="none"/><circle cx="17.5" cy="6.5" r="0.9" fill="currentColor"/></svg>
-  );
-  const IconTwitter = ({ size = 16 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden><path d="M23 4.5a9 9 0 0 1-2.6.7 4.5 4.5 0 0 0-7.8 4.1A12.8 12.8 0 0 1 3 3.7a4.5 4.5 0 0 0 1.4 6 4.4 4.4 0 0 1-2-.6v.1a4.5 4.5 0 0 0 3.6 4.4 4.6 4.6 0 0 1-2 .1 4.5 4.5 0 0 0 4.2 3.1A9 9 0 0 1 2 19.5 12.8 12.8 0 0 0 8.7 21c7.5 0 11.6-6.2 11.6-11.6v-.5A8.2 8.2 0 0 0 23 4.5z" fill="currentColor"/></svg>
-  );
-  const IconLink = ({ size = 16 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden><path d="M10 14a5 5 0 0 1 7-7l1 1" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M14 10a5 5 0 0 1-7 7l-1-1" stroke="currentColor" strokeWidth="1.2" fill="none"/></svg>
-  );
-  const IconLinkedIn = ({ size = 16 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M8 11v6M8 8v.01M12 11v6M16 11v6" stroke="currentColor" strokeWidth="1.2"/></svg>
-  );
 
   const iconBtnStyle = (enabled = true): React.CSSProperties => ({
     display: "inline-flex",
@@ -229,20 +230,28 @@ export default function NormalPreview({ data, showFooter = true }: { data?: Norm
 
             <div className="social-row" aria-label="Social links">
               {socialsObj.instagram ? (
-                <a href={buildSocialHref(socialsObj.instagram, "instagram")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="Instagram"><IconInstagram /></a>
-              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><IconInstagram /></span> : null)}
+                <a href={buildSocialHref(socialsObj.instagram, "instagram")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="Instagram">
+                  <SocialIcon name="instagram" />
+                </a>
+              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><SocialIcon name="instagram" /></span> : null)}
 
               {socialsObj.twitter ? (
-                <a href={buildSocialHref(socialsObj.twitter, "twitter")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="Twitter"><IconTwitter /></a>
-              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><IconTwitter /></span> : null)}
+                <a href={buildSocialHref(socialsObj.twitter, "twitter")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="Twitter">
+                  <SocialIcon name="twitter" />
+                </a>
+              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><SocialIcon name="twitter" /></span> : null)}
 
               {socialsObj.linkedin ? (
-                <a href={buildSocialHref(socialsObj.linkedin, "linkedin")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="LinkedIn"><IconLinkedIn /></a>
-              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><IconLinkedIn /></span> : null)}
+                <a href={buildSocialHref(socialsObj.linkedin, "linkedin")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="LinkedIn">
+                  <SocialIcon name="linkedin" />
+                </a>
+              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><SocialIcon name="linkedin" /></span> : null)}
 
               {socialsObj.website ? (
-                <a href={buildSocialHref(socialsObj.website, "website")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="Website"><IconLink /></a>
-              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><IconLink /></span> : null)}
+                <a href={buildSocialHref(socialsObj.website, "website")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="Website">
+                  <SocialIcon name="link" />
+                </a>
+              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><SocialIcon name="link" /></span> : null)}
             </div>
 
             {/* removed horizontal photos under actions - photos are shown only in About (gallery-grid) */}

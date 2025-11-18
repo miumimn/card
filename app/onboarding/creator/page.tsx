@@ -11,16 +11,17 @@ export default function Page() {
 
     { name: "profileImage", label: "Profile image (rounded)", type: "files", maxFiles: 1, accept: "image/*" },
 
-    { name: "miniGallery", label: "Mini gallery (up to 3 images)", type: "files", maxFiles: 3, accept: "image/*" },
+    // Use miniGallery as the single source for small featured media. Do not ask for a separate mediaImages field.
+    { name: "miniGallery", label: "Featured media / Mini gallery (up to 3 images)", type: "files", maxFiles: 3, accept: "image/*" },
 
     { name: "youtube", label: "YouTube channel URL", type: "text", placeholder: "https://youtube.com/..." },
     { name: "instagram", label: "Instagram handle or URL", type: "text", placeholder: "@handle or https://instagram.com/..." },
     { name: "tiktok", label: "TikTok handle or URL", type: "text", placeholder: "@handle or https://tiktok.com/..." },
     { name: "snapchat", label: "Snapchat handle or URL", type: "text", placeholder: "@handle or https://snapchat.com/..." },
     { name: "patreon", label: "Patreon URL", type: "text" },
-    { name: "merch", label: "Merch / Shop URL", type: "text" },
 
-    { name: "mediaImages", label: "Featured media (up to 3)", type: "files", maxFiles: 3, accept: "image/*" },
+    // Hire / collaboration contact
+    { name: "hire_link", label: "Hire / collaboration link (email, calendly or contact page)", type: "text", placeholder: "mailto:you@domain.com or https://calendly.com/you" },
 
     // sponsor kit: allow file upload (pdf) OR a URL
     { name: "sponsor_kit", label: "Sponsor kit (PDF file)", type: "files", maxFiles: 1, accept: ".pdf,application/pdf" },

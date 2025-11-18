@@ -449,7 +449,7 @@ export default function CheckoutForm() {
               <div style={successBadgeStyle}>✓</div>
               <div>
                 <h2 style={{ margin: 0 }}>Order submitted</h2>
-                <p style={{ margin: 0, color: "var(--muted)" }}>Thanks — your NexCard order is being processed.</p>
+                <p style={{ margin: 0, color: "var(--muted)" }}>Thanks, your NexCard order is being processed.</p>
               </div>
             </div>
 

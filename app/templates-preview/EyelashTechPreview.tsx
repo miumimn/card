@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import SvgIcon from "@/components/Icon";
 
 type EyelashData = {
   name?: string;
@@ -115,7 +116,7 @@ export default function EyelashTechPreview({
   const tiktok = asString(merged.tiktok ?? merged.extra_fields?.tiktok);
   const snapchat = asString(merged.snapchat ?? merged.extra_fields?.snapchat);
   const facebook = asString(merged.facebook ?? merged.extra_fields?.facebook);
-  const contactCards = (merged.contact_cards && Array.isArray(merged.contact_cards))
+  const contactCards: string[] = (merged.contact_cards && Array.isArray(merged.contact_cards))
     ? merged.contact_cards.map(String)
     : (merged.extra_fields?.contact_cards && Array.isArray(merged.extra_fields.contact_cards) ? merged.extra_fields.contact_cards.map(String) : []);
 
@@ -131,32 +132,17 @@ export default function EyelashTechPreview({
     setLightboxSrc(src);
   };
 
-  /* SVG icons */
-  const IconInstagram = ({ className = "" }: { className?: string }) => (
-    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="3" y="3" width="18" height="18" rx="5" stroke="#E1306C" strokeWidth="1.2" fill="none"/>
-      <path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6z" stroke="#E1306C" strokeWidth="1.2" fill="none"/>
-      <circle cx="17.5" cy="6.5" r="0.6" fill="#E1306C"/>
-    </svg>
-  );
-  const IconSnapchat = ({ className = "" }: { className?: string }) => (
-    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M12 2c4.97 0 9 4.03 9 9 0 3.07-1.6 5.78-4 7.32V21s-1 .5-4 .5-4-.5-4-.5v-2.68C4.6 16.78 3 14.07 3 11 3 6.03 7.03 2 12 2z" fill="#FFFC00"/>
-      <path d="M9 15s1 1 3 1 3-1 3-1" stroke="#000" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    </svg>
-  );
-  const IconTiktok = ({ className = "" }: { className?: string }) => (
-    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M9 8v8a4 4 0 1 0 4-4V6h3a4 4 0 0 1-3 2v4a2 2 0 1 1-2-2V8H9z" fill="#010101"/>
-    </svg>
-  );
-  const IconFacebook = ({ className = "" }: { className?: string }) => (
-    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M22 12.07C22 6.48 17.52 2 12 2S2 6.48 2 12.07c0 4.99 3.66 9.12 8.44 9.95v-7.05H7.9v-2.9h2.54V9.41c0-2.5 1.49-3.88 3.77-3.88 1.09 0 2.23.2 2.23.2v2.45h-1.25c-1.23 0-1.61.77-1.61 1.56v1.87h2.74l-.44 2.9h-2.3V22c4.78-.83 8.44-4.96 8.44-9.93z" fill="#1877F2"/>
-    </svg>
-  );
+  // Build contact items for Contact tab
+  const contactItems: Array<{ label: string; value?: string; href?: string }> = [];
+  if (phone) contactItems.push({ label: "Phone", value: phone, href: `tel:${phone.replace(/\s+/g, "")}` });
+  if (bookingLink) contactItems.push({ label: "Online booking", value: bookingLink, href: bookingLink });
+  if (giftVouchers) contactItems.push({ label: "Gift vouchers", value: giftVouchers, href: giftVouchers });
+  if (address) contactItems.push({ label: "Address", value: address });
+  if (contactCards.length) {
+    // explicit type annotation for the iteration variable to satisfy TS strictness
+    contactCards.forEach((c: string) => contactItems.push({ label: "Files", value: c }));
+  }
 
-  // build map iframe src using address if provided (Google maps search embed)
   const mapSrc = address
     ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`
     : `https://www.openstreetmap.org/export/embed.html?bbox=-0.128%2C51.503%2C-0.116%2C51.508&amp;layer=mapnik`;
@@ -184,21 +170,25 @@ body.lash{ margin:0; font-family:Inter,system-ui,Arial; background:var(--lash-bg
 
 /* socials row */
 .social-row { display:flex; gap:10px; margin-top:8px; }
+/* keep the social button block size the same, but increase the svg (logo) inside */
 .social-btn { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; background:var(--lash-card); box-shadow:0 6px 18px rgba(20,18,20,0.04); border:1px solid rgba(0,0,0,0.03); color:var(--lash-accent); text-decoration:none; }
-.contact-block { margin-top:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+/* increase only the SVG logo size inside the button without changing the button dimensions */
+.social-btn svg, .contact-info .social-btn svg { width:22px; height:22px; }
 
-/* contact column inside contact panel */
+/* contact layout */
 .contact-column { display:flex; gap:12px; align-items:flex-start; margin-top:12px; flex-wrap:wrap; }
-.contact-info { background:var(--lash-card); padding:12px; border-radius:10px; box-shadow:0 8px 24px rgba(20,18,20,0.03); }
+.contact-info { background:var(--lash-card); padding:12px; border-radius:10px; box-shadow:0 8px 24px rgba(20,18,20,0.03); min-width:220px; flex:1; }
 .contact-info h4 { margin:0 0 6px 0; font-size:14px; }
 .contact-list { display:flex; flex-direction:column; gap:8px; margin-top:6px; }
-.qr-wrap { display:flex; gap:12px; align-items:center; }
+
+/* clean stacked contact items for mobile */
+.contact-stacked { display:flex; flex-direction:column; gap:10px; }
 
 /* lightbox */
 .lightbox { position:fixed; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center; background:rgba(3,7,18,0.7) }
 .lightbox img { max-width:92%; max-height:92%; border-radius:10px; }
 
-/* small responsive tweaks */
+/* responsive tweaks */
 @media (max-width:720px) {
   .hero { padding:18px; min-height:unset; }
   .avatar{ width:88px; height:88px; }
@@ -209,7 +199,11 @@ body.lash{ margin:0; font-family:Inter,system-ui,Arial; background:var(--lash-bg
 
       <div className="lash" style={{ minHeight: "100vh" }}>
         <main className="wrap">
-          <section className="hero" aria-label="Eyelash hero" style={heroImage ? { backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.98)), url('${heroImage}')`, backgroundSize: "cover", backgroundPosition: "center" } : undefined }>
+          <section
+            className="hero"
+            aria-label="Eyelash hero"
+            style={heroImage ? { backgroundImage: `linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.98)), url('${heroImage}')`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+          >
             <div className="hero-inner" style={{ display: "flex", gap: 18, alignItems: "center", width: "100%", maxWidth: 860 }}>
               <div className="avatar" style={avatar ? { backgroundImage: `url('${avatar}')` } : undefined} aria-hidden="true" />
               <div className="meta" style={{ flex: 1 }}>
@@ -225,7 +219,6 @@ body.lash{ margin:0; font-family:Inter,system-ui,Arial; background:var(--lash-bg
                   ) : (
                     <>
                       <a className="primary-btn" href={telHref} aria-label="Call to book">Book Now</a>
-                      {/* only show gift vouchers button if user provided a gift vouchers URL (do not auto-show on profile previews) */}
                       {(giftVouchers || showFooter) ? (
                         <a className="primary-btn" href={giftVouchers || bookingLink || "#"} style={{ background: "#fff", color: "var(--lash-accent)", border: "1px solid rgba(0,0,0,0.04)" }}>
                           {giftVouchers ? "Gift Vouchers" : "Gift Vouchers"}
@@ -236,10 +229,10 @@ body.lash{ margin:0; font-family:Inter,system-ui,Arial; background:var(--lash-bg
                 </div>
 
                 <nav className="social-row" aria-label="social links" style={{ marginTop: 8 }}>
-                  {instagram ? <a className="social-btn" href={instagram.startsWith("http") ? instagram : `https://instagram.com/${instagram.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="Instagram"><IconInstagram /></a> : null}
-                  {tiktok ? <a className="social-btn" href={tiktok.startsWith("http") ? tiktok : `https://www.tiktok.com/@${tiktok.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="TikTok"><IconTiktok /></a> : null}
-                  {snapchat ? <a className="social-btn" href={snapchat.startsWith("http") ? snapchat : `https://www.snapchat.com/add/${snapchat.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="Snapchat"><IconSnapchat /></a> : null}
-                  {facebook ? <a className="social-btn" href={facebook.startsWith("http") ? facebook : facebook} target="_blank" rel="noreferrer" aria-label="Facebook"><IconFacebook /></a> : null}
+                  {instagram ? <a className="social-btn" href={instagram.startsWith("http") ? instagram : `https://instagram.com/${instagram.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="Instagram"><SvgIcon name="instagram" width={18} height={18} /></a> : null}
+                  {tiktok ? <a className="social-btn" href={tiktok.startsWith("http") ? tiktok : `https://www.tiktok.com/@${tiktok.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="TikTok"><SvgIcon name="tiktok" width={18} height={18} /></a> : null}
+                  {snapchat ? <a className="social-btn" href={snapchat.startsWith("http") ? snapchat : `https://www.snapchat.com/add/${snapchat.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="Snapchat"><SvgIcon name="snapchat" width={18} height={18} /></a> : null}
+                  {facebook ? <a className="social-btn" href={facebook.startsWith("http") ? facebook : facebook} target="_blank" rel="noreferrer" aria-label="Facebook"><SvgIcon name="facebook" width={18} height={18} /></a> : null}
                 </nav>
               </div>
             </div>
@@ -291,7 +284,6 @@ body.lash{ margin:0; font-family:Inter,system-ui,Arial; background:var(--lash-bg
 
             <article id="refill" className={`panel ${tab === "refill" ? "active" : ""}`}>
               <h3 style={{ margin: "0 0 8px" }}>Refill & Retention</h3>
-              {/* show user-provided refill tips only — do not auto-fill on profile preview */}
               {refillTips ? (
                 <div style={{ background: "#fff", padding: 12, borderRadius: 10 }}>
                   <p style={{ margin: 0 }}>{refillTips}</p>
@@ -322,37 +314,58 @@ body.lash{ margin:0; font-family:Inter,system-ui,Arial; background:var(--lash-bg
             <article id="contact" className={`panel ${tab === "contact" ? "active" : ""}`}>
               <h3 style={{ margin: "0 0 8px" }}>Contact</h3>
 
-              <div className="contact-column">
-                <div className="contact-info" style={{ minWidth: 220 }}>
-                  <h4>Book & Contact</h4>
-                  <div className="contact-list">
-                    <div><strong>Phone</strong><div><a href={telHref} style={{ color: "var(--lash-text)" }}>{phone}</a></div></div>
-                    <div><strong>Online booking</strong><div><a href={bookingLink || "https://example.com/mila"} style={{ color: "var(--lash-accent)" }}>{bookingLink ? bookingLink : "example.com/mila"}</a></div></div>
-                    {/* only show Gift vouchers entry when user provided gift_vouchers (hide on profile preview if not provided) */}
-                    {(giftVouchers || showFooter) ? (
-                      <div><strong>Gift vouchers</strong><div><a href={giftVouchers || "#"} style={{ color: "var(--lash-accent)" }}>{giftVouchers ? "Buy vouchers" : "Buy vouchers"}</a></div></div>
-                    ) : null}
+              {/* Clean, consistent contact layout: stacked cards with label + action */}
+              <div className="contact-stacked">
+                {contactItems.length ? contactItems.map((it, idx) => (
+                  <div key={idx} className="contact-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <h4 style={{ margin: 0 }}>{it.label}</h4>
+                      <div style={{ marginTop: 6, color: "var(--lash-muted)" }}>
+                        {it.href ? (
+                          <a href={it.href} target={it.href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" style={{ color: "var(--lash-accent)" }}>
+                            {it.value}
+                          </a>
+                        ) : (
+                          <span>{it.value}</span>
+                        )}
+                      </div>
+                    </div>
+                    {/* small action area */}
+                    <div style={{ marginLeft: 12 }}>
+                      {it.href ? (
+                        <a href={it.href} className="primary-btn" style={{ padding: "8px 10px", borderRadius: 8 }}>
+                          Open
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
+                )) : (
+                  <div className="contact-info">
+                    <p style={{ margin: 0, color: "var(--lash-muted)" }}>No contact details provided.</p>
+                  </div>
+                )}
 
+                {/* Socials grouped into a compact card */}
                 <div className="contact-info">
-                  <h4>Social</h4>
+                  <h4 style={{ margin: 0 }}>Social</h4>
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    {instagram ? <a className="social-btn" href={instagram.startsWith("http") ? instagram : `https://instagram.com/${instagram.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="Instagram"><IconInstagram /></a> : null}
-                    {tiktok ? <a className="social-btn" href={tiktok.startsWith("http") ? tiktok : `https://www.tiktok.com/@${tiktok.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="TikTok"><IconTiktok /></a> : null}
-                    {snapchat ? <a className="social-btn" href={snapchat.startsWith("http") ? snapchat : `https://www.snapchat.com/add/${snapchat.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="Snapchat"><IconSnapchat /></a> : null}
-                    {facebook ? <a className="social-btn" href={facebook.startsWith("http") ? facebook : facebook} target="_blank" rel="noreferrer" aria-label="Facebook"><IconFacebook /></a> : null}
+                    {instagram ? <a className="social-btn" href={instagram.startsWith("http") ? instagram : `https://instagram.com/${instagram.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="Instagram"><SvgIcon name="instagram" width={18} height={18} /></a> : null}
+                    {tiktok ? <a className="social-btn" href={tiktok.startsWith("http") ? tiktok : `https://www.tiktok.com/@${tiktok.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="TikTok"><SvgIcon name="tiktok" width={18} height={18} /></a> : null}
+                    {snapchat ? <a className="social-btn" href={snapchat.startsWith("http") ? snapchat : `https://www.snapchat.com/add/${snapchat.replace(/^@/, "")}`} target="_blank" rel="noreferrer" aria-label="Snapchat"><SvgIcon name="snapchat" width={18} height={18} /></a> : null}
+                    {facebook ? <a className="social-btn" href={facebook.startsWith("http") ? facebook : facebook} target="_blank" rel="noreferrer" aria-label="Facebook"><SvgIcon name="facebook" width={18} height={18} /></a> : null}
                   </div>
                 </div>
 
-                <div className="contact-info qr-wrap" style={{ alignItems: "center" }}>
+                {/* QR / Download card */}
+                <div className="contact-info" style={{ display: "flex", gap: 12, alignItems: "center" }}>
                   <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData || "https://example.com/mila")}`} alt="QR" style={{ width: 84, height: 84, borderRadius: 10, background: "#fff" }} />
                   <div style={{ color: "var(--lash-muted)", fontSize: 13 }}>
-                    Download QR<br/>
+                    <div>View on mobile</div>
                     <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(qrData || "https://example.com/mila")}`} download style={{ color: "var(--lash-accent)" }}>Download</a>
                   </div>
                 </div>
               </div>
+
             </article>
           </section>
 

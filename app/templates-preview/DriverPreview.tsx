@@ -26,12 +26,28 @@ export default function DriverPreview({ data, showFooter = true }: { data?: Driv
   const router = useRouter();
   const [tab, setTab] = useState<string>("services");
   const [clientHref, setClientHref] = useState<string>("");
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
   useEffect(() => {
     try {
       setClientHref(window.location.href || "");
     } catch {
       setClientHref("");
+    }
+
+    // determine mobile breakpoint on client and listen for changes
+    const mq = window.matchMedia?.("(max-width:720px)");
+    const setFromMq = () => setIsMobile(Boolean(mq?.matches));
+    if (mq) {
+      setFromMq();
+      mq.addEventListener?.("change", setFromMq);
+      return () => mq.removeEventListener?.("change", setFromMq);
+    } else {
+      // fallback based on innerWidth
+      const onResize = () => setIsMobile(window.innerWidth <= 720);
+      onResize();
+      window.addEventListener("resize", onResize);
+      return () => window.removeEventListener("resize", onResize);
     }
   }, []);
 
@@ -85,14 +101,14 @@ export default function DriverPreview({ data, showFooter = true }: { data?: Driv
     merged.vehicle_image ??
     merged.extra_fields?.vehicleImage ??
     merged.extra_fields?.vehicle_image ??
-    merged.heroImage ??
-    merged.hero_image
+    ""
   );
   const heroImage = asString(
     merged.heroImage ??
     merged.hero_image ??
     merged.extra_fields?.heroImage ??
-    merged.extra_fields?.hero_image
+    merged.extra_fields?.hero_image ??
+    ""
   );
 
   const stats = asArray(merged.stats ?? merged.extra_fields?.stats);
@@ -113,9 +129,15 @@ export default function DriverPreview({ data, showFooter = true }: { data?: Driv
 
   const qrData = asString(merged.profile_url) || clientHref || "";
 
-  // New: Book/Call link should prioritize phone (call) — as requested.
-  // If phone exists use tel: link; otherwise fall back to bookingLink or clientHref.
+  // Book/Call link should prioritize phone (call) — as requested.
   const callHref = phone ? `tel:${phone.replace(/\s+/g, "")}` : (bookingLink || clientHref);
+
+  // Hero background is applied only on non-mobile to avoid duplicate/stretched images on small screens
+  const heroStyle = (!isMobile && heroImage) ? {
+    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0.03)), url('${heroImage}')`,
+    backgroundSize: "cover",
+    backgroundPosition: "top center"
+  } : undefined;
 
   return (
     <>
@@ -126,7 +148,8 @@ export default function DriverPreview({ data, showFooter = true }: { data?: Driv
     body.driver-page{ margin:0; font-family:Inter,system-ui,Arial; background:linear-gradient(180deg,#041018,#07121a); color:var(--dr-text); }
     .wrap{ max-width:980px; margin:14px auto; padding:16px; }
     .hero{ display:flex; gap:12px; align-items:center; padding:14px; border-radius:12px; background:linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.06)); }
-    .vehicle{ width:120px; height:80px; background-size:cover; border-radius:8px; box-shadow:0 12px 30px rgba(0,0,0,0.12); }
+    /* vehicle container now holds an <img> which is responsive and uses object-fit with object-position: top */
+    .vehicle-img { width:120px; height:80px; object-fit:cover; object-position:top center; border-radius:8px; box-shadow:0 12px 30px rgba(0,0,0,0.12); display:block; }
     .meta{ flex:1 }
     .name{ margin:0; font-weight:900; font-size:20px; color:var(--dr-accent); }
     .role{ margin:6px 0 0; color:var(--dr-muted); font-weight:700 }
@@ -139,20 +162,33 @@ export default function DriverPreview({ data, showFooter = true }: { data?: Driv
     .panel{ display:none; color:var(--dr-muted) }
     .panel.active{ display:block; }
     .map{ margin-top:12px; height:160px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.03) }
-    .stats{ display:flex; gap:8px; margin-top:8px }
+    .stats{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap }
     .stat-pill{ background: rgba(255,255,255,0.02); padding:8px 10px; border-radius:8px; font-weight:800 }
-    @media (max-width:720px){ .hero{ flex-direction:column; align-items:flex-start } .vehicle{ width:100%; height:140px } }
+    /* Mobile: stack hero, make vehicle image full width and taller, and enable hero background as inset or removed (we handle via heroStyle) */
+    @media (max-width:720px){
+      .hero{ flex-direction:column; align-items:flex-start; padding:12px; }
+      .vehicle-img{ width:100%; height:160px; object-position:top center; border-radius:10px; }
+      .stats{ margin-top:10px }
+    }
     ` }} />
 
       <div className="driver-page" style={{ minHeight: "100vh" }}>
         <main className="wrap">
-          <section className="hero" aria-label="Driver hero" style={heroImage ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0.03)), url('${heroImage}')`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
-            <div className="vehicle" aria-hidden="true" style={vehicleImage ? { backgroundImage: `url('${vehicleImage}')` } : { backgroundImage: "url('https://picsum.photos/id/1012/800/400')" }} />
+          <section className="hero" aria-label="Driver hero" style={heroStyle}>
+            {/* vehicle image is now an <img> so mobile scaling is correct and object-position ensures top part is visible */}
+            <img
+              className="vehicle-img"
+              src={vehicleImage || "https://picsum.photos/id/1012/800/400"}
+              alt="Vehicle"
+              style={{ objectFit: "cover", objectPosition: "top center" }}
+              onError={(e) => { (e.target as HTMLImageElement).src = "https://picsum.photos/id/1012/800/400"; }}
+            />
+
             <div className="meta">
               <h1 className="name">{name}</h1>
               <div className="role">{role}</div>
 
-              <div className="stats" aria-hidden>
+              <div className="stats" aria-hidden="true">
                 {statsToShow.map((s: string, i: number) => <div key={i} className="stat-pill">{s}</div>)}
               </div>
 
@@ -160,13 +196,12 @@ export default function DriverPreview({ data, showFooter = true }: { data?: Driv
                 {showFooter ? (
                   <>
                     <button className="primary-btn" onClick={() => router.push("/onboarding/driver")}>Use this template</button>
-                    <button className="primary-btn" onClick={() => router.push("/templates-preview") } style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "var(--dr-text)" }}>Back</button>
+                    <button className="primary-btn" onClick={() => router.push("/templates-preview")} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "var(--dr-text)" }}>Back</button>
                   </>
                 ) : (
                   <>
                     {/* Book Now must call the phone number */}
                     <a className="primary-btn" href={callHref} aria-label="Call driver">Book Now</a>
-                    <a className="primary-btn" href={bookingLink ? bookingLink : `tel:${phone.replace(/\s+/g,"")}`} aria-label="Request Quote" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)", color: "var(--dr-text)" }}>Request Quote</a>
                   </>
                 )}
               </div>
@@ -214,7 +249,6 @@ export default function DriverPreview({ data, showFooter = true }: { data?: Driv
                   </div>
                 ) : null}
                 <div style={{ marginTop: 12 }}>
-                  {/* Ensure Book Now in contact also triggers a call */}
                   <a className="primary-btn" href={callHref}>Book Now</a>
                 </div>
               </div>

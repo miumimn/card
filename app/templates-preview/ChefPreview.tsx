@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import SvgIcon from "@/components/Icon"; // centralized SVG loader (public/svg/<name>.svg)
 
 type MenuItem = { title: string; price?: string; desc?: string; image?: string; category?: string; notes?: string };
 
@@ -104,20 +105,6 @@ export default function ChefPreview({ data, showFooter = true }: ChefPreviewProp
     }
     return out.filter((i) => i.title);
   }
-
-  // Small set of SVG icons for socials (kept inline so styles remain local)
-  const SocialIcons: Record<string, React.FC<{ size?: number }>> = {
-    instagram: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.2"/><path d="M7.5 12a4.5 4.5 0 1 0 9 0 4.5 4.5 0 0 0-9 0z" stroke="currentColor" strokeWidth="1.2"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor"/></svg>),
-    facebook: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M13 3h3v4h-3v10h-4V7H6V3h3V1.5A3.5 3.5 0 0 1 12 0c1 0 1 .5 1 .5V3z"/></svg>),
-    twitter: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M22 5.9c-.6.3-1.3.5-2 .6.7-.4 1.2-1 1.4-1.8-.7.4-1.4.6-2.2.8C18 4 17 3.5 15.9 3.5c-2 0-3.5 1.6-3.5 3.6 0 .3 0 .6.1.9C9 7.8 6.5 6.6 4.9 4.6c-.4.7-.5 1.4-.5 2.2 0 1.3.7 2.4 1.7 3-.5 0-1-.2-1.4-.4v.1c0 2 1.4 3.6 3.2 4-.3.1-.6.1-.9.1-.2 0-.4 0-.6-.1.4 1.3 1.6 2.2 3 2.2-1.2 1-2.8 1.6-4.5 1.6H6c1.6 1 3.4 1.6 5.3 1.6 6.4 0 9.9-5.4 9.9-10.2v-.5c.7-.5 1.2-1.2 1.6-2"/></svg>),
-    tiktok: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M16 8.5c-.6 0-1.1-.2-1.5-.5v6.5a3.5 3.5 0 1 1-3.5-3.5v-1.5a5 5 0 1 0 5 5V8.5z"/></svg>),
-    pinterest: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 2C6 2 2 6 2 11c0 3.1 1.7 5.7 4.2 6.9-.1-.6-.2-1.6 0-2.3.2-.6 1.4-4 .1-6C6 8 9 7 10.6 8c.7.4 1 1 1 1.7 0 1-.6 2-1 2.4-.3.4-.8 1.2-.4 2.6.2.8 1 1.3 2 1.3 2.5 0 4.4-3 4.4-7.1 0-3.1-2.1-5.2-5.1-5.2z"/></svg>),
-    youtube: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M21.6 7.2s-.2-1.6-.8-2.2c-.8-.8-1.7-.8-2.1-.9C15.7 3.8 12 3.8 12 3.8h-.1s-3.7 0-6.6.3c-.4 0-1.4.1-2.1.9C2 5.6 1.8 7.2 1.8 7.2S1.5 9 1.5 10.8v1.4c0 1.8.3 3.6.3 3.6s.2 1.6.8 2.2c.8.8 1.9.8 2.4.9 1.8.1 7.8.3 7.8.3s3.7 0 6.6-.3c.4 0 1.4-.1 2.1-.9.6-.6.8-2.2.8-2.2s.3-1.8.3-3.6v-1.4c0-1.8-.3-3.6-.3-3.6zM10 14.5v-5l4 2.5-4 2.5z"/></svg>),
-    linkedin: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M20 2H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM8.5 18.5H6V10h2.5v8.5zM7.25 8.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zM18.5 18.5h-2.5v-4.5c0-1.1-.4-1.9-1.3-1.9-.7 0-1.1.5-1.3 1v5.4H10V10h2.4v1.1c.4-.7 1.1-1.5 2.6-1.5 1.9 0 3.5 1.2 3.5 3.9v5z"/></svg>),
-    website: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.2"/><path d="M2 12h20M12 2v20" stroke="currentColor" strokeWidth="1.2"/></svg>),
-    email: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden><path d="M3 7.5v9A2.5 2.5 0 0 0 5.5 19h13A2.5 2.5 0 0 0 21 16.5v-9A2.5 2.5 0 0 0 18.5 5h-13A2.5 2.5 0 0 0 3 7.5z" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M21 7.5l-9 6-9-6" stroke="currentColor" strokeWidth="1.2" fill="none"/></svg>),
-    phone: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M22 16.92v3a1 1 0 0 1-1.11 1A19.86 19.86 0 0 1 13 17.5 19.27 19.27 0 0 1 7 11.5 19.86 19.86 0 0 1 3.1 4.11 1 1 0 0 1 4.1 3h3a1 1 0 0 1 1 .75c.12.6.3 1.2.54 1.79a1 1 0 0 1-.24 1L7.5 7.5a14 14 0 0 0 8 8l1.96-1.96a1 1 0 0 1 1-.24c.59.24 1.19.42 1.79.54a1 1 0 0 1 .75 1v3z"/></svg>),
-  };
 
   // platform brand colors to improve contrast on dark hero
   const socialColors: Record<string, string> = {
@@ -268,6 +255,7 @@ export default function ChefPreview({ data, showFooter = true }: ChefPreviewProp
   --accent: #ff7a18;
   --muted: #bfc9d3;
   --text: #f7fafc;
+  --tagline: #ffd86b;
   --chef-top: url('https://images.unsplash.com/photo-1525755662778-989d0524087e?q=80&w=1400&auto=format&fit=crop&ixlib=rb-4.0.3&s=6f8b3f3b0e3d6b5b1a6f2b5c9d7a7b8c');
 }
 
@@ -286,9 +274,11 @@ body.chef-page{
   position:relative;
   border-radius:14px;
   overflow:hidden;
+  /* enlarge background to the right and ensure it covers the top area */
   background-image: linear-gradient(180deg, rgba(10,12,14,0.25), rgba(10,12,14,0.45)), var(--chef-top);
-  background-size:cover;
-  background-position:center;
+  background-repeat: no-repeat;
+  background-position: right center;          /* focus image towards the right */
+  background-size: 140% auto;                 /* enlarge horizontally so it extends to the right */
   min-height: 44vw;
   display:flex;
   align-items:flex-end;
@@ -296,16 +286,59 @@ body.chef-page{
   box-shadow: 0 18px 40px rgba(2,6,23,0.6);
 }
 
+/* For smaller screens keep the usual cover behaviour so image doesn't get weirdly cropped */
+@media (max-width: 880px) {
+  .hero {
+    background-position: center top;
+    background-size: cover;
+  }
+}
+
 .hero-decor { position:absolute; right:12px; top:12px; width:84px; height:84px; opacity:0.14; pointer-events:none; filter:grayscale(1) contrast(.9); }
 
 .hero-meta { display:flex; gap:12px; align-items:center; z-index:2; }
 .avatar { width:86px; height:86px; border-radius:999px; border:4px solid rgba(255,255,255,0.95); background-size:cover; background-position:center; flex:0 0 86px; box-shadow: 0 10px 30px rgba(2,6,23,0.48); }
-.name { margin:0; font-size:20px; font-weight:800; color:var(--text); }
-.role { margin:4px 0 0; color:var(--muted); font-size:13px; font-weight:700; }
+/* make the name explicitly white so it always reads well on the hero */
+.name { margin:0; font-size:20px; font-weight:800; color:#ffffff !important; }
+.role { margin:4px 0 0; color:var(--tagline); font-size:13px; font-weight:700; }
 
-.social-row { display:flex; gap:10px; margin-left:8px; align-items:center; }
-.social { width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; background:rgba(255,255,255,0.06); color:var(--text); border:1px solid rgba(255,255,255,0.03); text-decoration:none; box-shadow: 0 6px 18px rgba(2,6,23,0.4); }
-.social svg { width:16px; height:16px; display:block; }
+/* Socials: icons-only, a bit larger and horizontally scrollable if many */
+.social-row {
+  display:flex;
+  gap:10px;
+  margin-left:8px;
+  align-items:center;
+  overflow-x:auto;                 /* allow horizontal scroll when many icons */
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:6px;              /* space for scroll on some platforms */
+  max-width: calc(100% - 120px);   /* ensure it doesn't exceed hero content area (adjust if needed) */
+}
+.social {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0;
+  width: 48px;        /* slightly larger buttons for better tap targets */
+  height: 48px;
+  flex: 0 0 auto;     /* prevent shrinking so horizontal scroll works */
+  line-height: 1;
+  text-decoration: none;
+}
+.social svg, .social img {
+  width:24px;        /* increased icon size */
+  height:24px;
+  display:block;
+  object-fit:contain;
+  transform: translate(1px, 1px); /* tiny shift to visually center */
+}
+
+/* hide default scrollbar in modern browsers (keeps clean look) */
+.social-row::-webkit-scrollbar { height: 8px; }
+.social-row::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; }
+.social-row { scrollbar-color: rgba(255,255,255,0.06) transparent; scrollbar-width: thin; }
 
 /* keep rest exactly as before */
 .tabs { display:flex; gap:8px; padding:14px 4px; flex-wrap:wrap; }
@@ -358,12 +391,11 @@ body.chef-page{
                   {Object.entries(socials).map(([k, v]) => {
                     if (!v) return null;
                     const href = socialHref(k, v);
-                    const Icon = SocialIcons[k] ?? SocialIcons.website;
                     const iconColor = socialColors[k] ?? "#ffffff";
                     return (
                       <a key={k} className="social" href={href} target={k === "email" || k === "phone" ? undefined : "_blank"} rel="noreferrer" aria-label={k} title={k}
-                        style={{ background: "rgba(255,255,255,0.06)", boxShadow: "0 6px 18px rgba(2,6,23,0.4)", color: iconColor }}>
-                        <Icon size={16} />
+                        style={{ color: iconColor }}>
+                        <SvgIcon name={k} alt={k} width={24} height={24} useImg />
                       </a>
                     );
                   })}

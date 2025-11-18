@@ -16,7 +16,6 @@ export default function Page() {
     { name: "about", label: "About (short bio)", type: "textarea", placeholder: "Short bio & what you play" },
     { name: "genres", label: "Genres (comma or newline separated)", type: "textarea", placeholder: "House\nTechno" },
 
-    { name: "heroImage", label: "Hero image (full-bleed)", type: "files", maxFiles: 1, accept: "image/*" },
     { name: "avatar", label: "Avatar (round)", type: "files", maxFiles: 1, accept: "image/*" },
 
     // mixes metadata lines; images separate
@@ -30,6 +29,10 @@ export default function Page() {
     { name: "phone", label: "Phone number (for bookings)", type: "tel", placeholder: "+1 555 555 5555" },
     { name: "agent", label: "Agent / Agency (optional)", type: "text", placeholder: "e.g. Lumen Talent" },
 
+    // Listen / Book CTA: accept either a phone number or a full URL
+    // Stored as `listen_link` and the preview should prefer this over profile_url for the Listen / Book button.
+    { name: "listen_link", label: "Listen / Booking link or phone", type: "text", placeholder: "https://yourprofile.com or +1 555 555 5555", help: "Enter a URL or phone number (will be used for the Listen / Book CTA)" },
+
     // socials
     { name: "instagram", label: "Instagram handle or URL", type: "text", placeholder: "@yourhandle or https://instagram.com/..." },
     { name: "tiktok", label: "TikTok handle or URL", type: "text", placeholder: "@yourhandle or https://tiktok.com/..." },
@@ -37,7 +40,6 @@ export default function Page() {
     { name: "facebook", label: "Facebook page or URL", type: "text", placeholder: "https://facebook.com/yourpage" },
     { name: "soundcloud", label: "SoundCloud profile or URL", type: "text", placeholder: "https://soundcloud.com/yourprofile" },
 
-    { name: "contact_cards", label: "Contact cards (one per line, e.g. 'Rider & Tech Specs')", type: "textarea", placeholder: "Rider & Tech Specs\nPress Kit\nPromo Images" },
 
     { name: "profile_url", label: "Public profile URL (for QR / Listen CTA)", type: "url", placeholder: "https://example.com/yourprofile" },
   ];

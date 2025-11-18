@@ -1,16 +1,18 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import SvgIcon from "@/components/Icon"; // centralized SVG loader (public/svg/<name>.svg)
 
 /**
- * BoutiqueFashionPreview (updated)
+ * BoutiqueFashionPreview
  *
- * Fixes:
- * - Robust product image parsing: product image fields may be arrays, strings, or objects (with url/src/path).
- *   We now run parseImageField() for product images so uploads saved as objects/arrays show correctly.
- * - Single collection set: prefer merged.collection/collection_images/lookbook (one set) and use up to 3 images.
- *   Falls back to previous collection1/collection2 behavior if that single set is not present.
- * - Keeps /thumbs/ fallbacks and desktop/mobile styling & lightbox unchanged.
+ * IMPORTANT FIX:
+ * - Ensure useEffect dependency array length remains constant between renders.
+ * - Use only primitive boolean deps here (hasGallery, hasShop, hasAbout) so the deps array length doesn't change.
+ *
+ * Also:
+ * - Gallery & products placeholders only appear when showFooter === true (preview).
+ * - Robust parsing for gallery & product images (parseImageField).
  */
 
 export default function BoutiqueFashionPreview({ data, showFooter = true }: { data?: any; showFooter?: boolean }) {
@@ -20,7 +22,7 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
   // lightboxState: { kind: "works" | "shop", index: number } | null
   const [lightboxState, setLightboxState] = useState<{ kind: "works" | "shop"; index: number } | null>(null);
 
-  // Merge top-level and extra_fields
+  // Merge top-level + extra_fields
   const merged = useMemo(() => {
     const out: Record<string, any> = { ...(data ?? {}) };
     if (data?.extra_fields) {
@@ -32,21 +34,14 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
           });
         }
       } catch {
-        // ignore
+        // ignore parse errors
       }
     }
     return out;
   }, [data]);
 
-  /**
-   * parseImageField
-   * - Accepts: array of strings, single string, JSON-stringified array, comma-separated string.
-   * - Handles object inputs commonly returned from upload widgets: { url }, { src }, { path }, { secure_url }.
-   * - Returns array of string URLs (possibly empty).
-   */
   function parseImageField(value: any): string[] {
     if (value === undefined || value === null) return [];
-    // Array of strings or objects
     if (Array.isArray(value)) {
       const out: string[] = [];
       for (const item of value) {
@@ -59,14 +54,10 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
       }
       return out.filter(Boolean);
     }
-
-    // Object with url-like keys
     if (typeof value === "object" && value !== null) {
       const candidate = (value.url || value.src || value.path || value.secure_url || value.preview || value.filename || "");
       return candidate ? [String(candidate)] : [];
     }
-
-    // String: try JSON, comma-split, otherwise single URL/path
     if (typeof value === "string") {
       const s = value.trim();
       if (!s) return [];
@@ -81,7 +72,6 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
       if (s.includes(",")) return s.split(",").map((p) => p.trim()).filter(Boolean);
       return [s];
     }
-
     return [];
   }
 
@@ -90,19 +80,19 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
   const tagline = merged.tagline || merged.tag || "";
   const bio = merged.bio || "";
 
-  // Logo (fallback uses /thumbs/fashion-logo.jpg)
+  // Logo (no preview fallback on real profile)
   const logo = parseImageField(merged.profileImage ?? merged.profile_image ?? merged.brandLogo)[0] || (showFooter ? "/thumbs/fashion-logo.jpg" : "");
 
-  // COLLECTION: prefer a single collection set (merged.collection / merged.collection_images / merged.lookbook)
-  // The user requested one set that contains 3 images (we show up to 3).
+  // COLLECTION: prefer a single collection set (one array of images)
   const singleCollection = parseImageField(merged.collection ?? merged.collection_images ?? merged.lookbook ?? merged.lookbook_images ?? merged.collectionSet);
   const collectionFromOld = [
     ...parseImageField(merged.collection1 ?? merged.collection_1 ?? merged.collectionOne),
     ...parseImageField(merged.collection2 ?? merged.collection_2 ?? merged.collectionTwo),
   ];
-  // Prefer singleCollection if provided; otherwise fall back to collection1+collection2 logic
   const gallery = singleCollection.length ? singleCollection.slice(0, 3) : (collectionFromOld.length ? collectionFromOld : []);
-  const galleryToShow = gallery.length ? gallery : (showFooter ? [
+
+  // galleryToShow: only show preview placeholders when showFooter === true
+  const previewGalleryPlaceholders = [
     "/thumbs/fashion1.jpg",
     "/thumbs/fashion2.jpg",
     "/thumbs/fashion3.jpg",
@@ -111,9 +101,10 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
     "/thumbs/fashion6.jpg",
     "/thumbs/fashion7.jpg",
     "/thumbs/fashion8.jpg",
-  ] : []);
+  ];
+  const galleryToShow = gallery.length ? gallery : (showFooter ? previewGalleryPlaceholders : []);
 
-  // Products: structured productN_* fields and fallbacks
+  // Products: attempt to build from structured productN_* fields
   const products: { title?: string; price?: string; desc?: string; image?: string }[] = [];
   const requestedCount = (() => {
     const v = merged.product_count ?? merged.productCount ?? merged.products_count;
@@ -122,7 +113,6 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
     return Number.isFinite(n) && n > 0 ? Math.max(0, Math.min(4, Math.floor(n))) : null;
   })();
 
-  // collect productN_* fields (1..4) and use parseImageField for robust image extraction
   for (let i = 1; i <= 4; i++) {
     const title = merged[`product${i}_name`] || merged[`product${i}_title`] || "";
     const price = merged[`product${i}_price`] || "";
@@ -130,12 +120,10 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
     const rawImage = merged[`product${i}_image`];
     const parsedImgs = parseImageField(rawImage);
     const image = parsedImgs.length ? parsedImgs[0] : "";
-    if (title || price || desc || image) {
-      products.push({ title, price, desc, image });
-    }
+    if (title || price || desc || image) products.push({ title, price, desc, image });
   }
 
-  // fallback: products array or product_list (ensure parseImageField used)
+  // fallback: products array or product_list -> only add preview placeholders when showFooter === true
   if (!products.length) {
     if (Array.isArray(merged.products) && merged.products.length) {
       merged.products.slice(0, 4).forEach((p: any) => {
@@ -151,7 +139,7 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
         products.push({ title: title || titlePrice, price: price || "", desc: parts[1] || "" });
       });
     } else if (showFooter) {
-      // fallback uses /thumbs/
+      // only add preview/fallback products when in preview mode (showFooter === true)
       products.push({ title: "Linen Wrap Dress", price: "$119", desc: "Lightweight summer wrap", image: "/thumbs/fashion1.jpg" });
       products.push({ title: "Silk Slip Top", price: "$79", desc: "Soft silk for evenings", image: "/thumbs/fashion2.jpg" });
       products.push({ title: "Tailored Blazer", price: "$159", desc: "Sharp fit for workwear", image: "/thumbs/fashion3.jpg" });
@@ -159,7 +147,7 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
     }
   }
 
-  // Determine how many products to show:
+  // productsToShow: if not in preview and no real products, this will be empty -> shop will be hidden
   const productsToShow = (() => {
     if (requestedCount !== null) return products.slice(0, requestedCount);
     return products.filter((p) => p.title || p.image).slice(0, 4);
@@ -180,51 +168,18 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
   const hasAbout = !!bio;
   const hasContact = !!(instagram || tiktok || pinterest || website || email || phone || contactUrl);
 
+  // FIX: use stable dependency array of primitives only
   useEffect(() => {
     if (hasGallery) setActiveTab("works");
     else if (hasShop) setActiveTab("shop");
     else if (hasAbout) setActiveTab("about");
     else setActiveTab("contact");
-  }, [data]);
+  }, [hasGallery, hasShop, hasAbout]);
 
   // CTA: tel if phone else contactUrl else #
   const ctaHref = phone ? `tel:${String(phone).replace(/\s+/g, "")}` : (contactUrl || (showFooter ? "#" : ""));
 
-  // Social icons (SVG)
-  const Icons: Record<string, React.FC<{ size?: number }>> = {
-    instagram: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.2"/><path d="M7.5 12a4.5 4.5 0 1 0 9 0 4.5 4.5 0 0 0-9 0z" stroke="currentColor" strokeWidth="1.2"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor"/></svg>),
-    tiktok: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M16 8.5c-.6 0-1.1-.2-1.5-.5v6.5a3.5 3.5 0 1 1-3.5-3.5v-1.5a5 5 0 1 0 5 5V8.5z"/></svg>),
-    pinterest: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 2C6 2 2 6 2 11c0 3.1 1.7 5.7 4.2 6.9-.1-.6-.2-1.6 0-2.3.2-.6 1.4-4 .1-6C6 8 9 7 10.6 8c.7.4 1 1 1 1.7 0 1-.6 2-1 2.4-.3.4-.8 1.2-.4 2.6.2.8 1 1.3 2 1.3 2.5 0 4.4-3 4.4-7.1 0-3.1-2.1-5.2-5.1-5.2z"/></svg>),
-    website: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.2"/><path d="M2 12h20M12 2v20" stroke="currentColor" strokeWidth="1.2"/></svg>),
-    email: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden><path d="M3 7.5v9A2.5 2.5 0 0 0 5.5 19h13A2.5 2.5 0 0 0 21 16.5v-9A2.5 2.5 0 0 0 18.5 5h-13A2.5 2.5 0 0 0 3 7.5z" stroke="currentColor" strokeWidth="1.2" fill="none"/><path d="M21 7.5l-9 6-9-6" stroke="currentColor" strokeWidth="1.2" fill="none"/></svg>),
-    phone: ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M22 16.92v3a1 1 0 0 1-1.11 1A19.86 19.86 0 0 1 13 17.5 19.27 19.27 0 0 1 7 11.5 19.86 19.86 0 0 1 3.1 4.11 1 1 0 0 1 4.1 3h3a1 1 0 0 1 1 .75c.12.6.3 1.2.54 1.79a1 1 0 0 1-.24 1L7.5 7.5a14 14 0 0 0 8 8l1.96-1.96a1 1 0 0 1 1-.24c.59.24 1.19.42 1.79.54a1 1 0 0 1 .75 1v3z"/></svg>),
-  };
-
-  function socialHref(key: string, value: string) {
-    if (!value) return "";
-    switch (key) {
-      case "instagram": return value.startsWith("http") ? value : `https://instagram.com/${value.replace(/^@/, "")}`;
-      case "tiktok": return value.startsWith("http") ? value : `https://www.tiktok.com/@${value.replace(/^@/, "")}`;
-      case "pinterest": return value.startsWith("http") ? value : `https://pinterest.com/${value.replace(/^@/, "")}`;
-      case "website": return value.startsWith("http") ? value : `https://${value}`;
-      case "email": return `mailto:${value}`;
-      case "phone": return `tel:${String(value).replace(/\s+/g, "")}`;
-      default: return value;
-    }
-  }
-
-  // product contact link priority: contact_url -> profile_url -> mailto with subject
-  function productContactLink(productTitle?: string) {
-    if (contactUrl) return contactUrl;
-    if (merged.profile_url) return merged.profile_url;
-    if (email) {
-      const subject = `Inquiry about ${productTitle ?? "product"}`;
-      return `mailto:${email}?subject=${encodeURIComponent(subject)}`;
-    }
-    return "";
-  }
-
-  // Lightbox helpers (works/shop) and navigation
+  // Lightbox helpers (works/shop)
   const openWorksLightbox = (index: number) => {
     if (index < 0 || index >= galleryToShow.length) return;
     setLightboxState({ kind: "works", index });
@@ -268,6 +223,32 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
     ? (lightboxState.kind === "works" ? galleryToShow[lightboxState.index] : productsToShow[lightboxState.index]?.image || "")
     : null;
 
+  // small ref for possible mobile socials behavior
+  const socialsMobileRef = useRef<HTMLDivElement | null>(null);
+
+  function socialHref(key: string, value: string) {
+    if (!value) return "";
+    switch (key) {
+      case "instagram": return value.startsWith("http") ? value : `https://instagram.com/${value.replace(/^@/, "")}`;
+      case "tiktok": return value.startsWith("http") ? value : `https://www.tiktok.com/@${value.replace(/^@/, "")}`;
+      case "pinterest": return value.startsWith("http") ? value : `https://pinterest.com/${value.replace(/^@/, "")}`;
+      case "website": return value.startsWith("http") ? value : `https://${value}`;
+      case "email": return `mailto:${value}`;
+      case "phone": return `tel:${String(value).replace(/\s+/g, "")}`;
+      default: return value;
+    }
+  }
+
+  function productContactLink(productTitle?: string) {
+    if (contactUrl) return contactUrl;
+    if (merged.profile_url) return merged.profile_url;
+    if (email) {
+      const subject = `Inquiry about ${productTitle ?? "product"}`;
+      return `mailto:${email}?subject=${encodeURIComponent(subject)}`;
+    }
+    return "";
+  }
+
   return (
     <>
       <link rel="stylesheet" href="/assets/styles.css" />
@@ -282,9 +263,9 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
           --btn-bg: #ffffff;
           --btn-text: #111;
           --overlay: rgba(0,0,0,0.85);
+          --gold: #d4af37;
         }
 
-        /* Respect user's OS preference */
         @media (prefers-color-scheme: dark) {
           :root {
             --bg: #0b0712;
@@ -298,27 +279,6 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
           }
         }
 
-        body[data-theme="dark"], body.dark {
-          --bg: #0b0712;
-          --text: #ffffff;
-          --muted: #b9a7c9;
-          --accent: #ff6bcb;
-          --card-bg: #0f0b16;
-          --btn-bg: linear-gradient(90deg,var(--accent), #ff9ae1);
-          --btn-text: #14020a;
-          --overlay: rgba(0,0,0,0.85);
-        }
-        body[data-theme="light"], body.light {
-          --bg: #ffffff;
-          --text: #0b0712;
-          --muted: #6b6b76;
-          --accent: #ff6bcb;
-          --card-bg: #ffffff;
-          --btn-bg: #ffffff;
-          --btn-text: #111;
-          --overlay: rgba(0,0,0,0.05);
-        }
-
         .boutique { background: linear-gradient(180deg,var(--bg), #f7f7f7); color:var(--text); }
         .brand h1, .brand p { color: var(--text); }
         .brand p, .meta .desc, .panel p, .contact-list div { color: var(--muted); }
@@ -326,18 +286,47 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
 
         .btn { background: var(--btn-bg); color: var(--btn-text); }
         .btn.shop { background: var(--accent); color: var(--btn-text); border: none; }
-        .btn.ghost { border-color: rgba(255,255,255,0.06); }
+        .btn.ghost { border-color: rgba(0,0,0,0.06); }
 
         .lightbox-overlay { background: var(--overlay); }
 
-        /* keep rest of styling (desktop/mobile) from previous version */
+        .socials-inline { display: inline-flex; gap: 8px; align-items: center; }
+        .social {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(180deg, rgba(212,175,55,0.04), rgba(212,175,55,0.015));
+          color: inherit;
+          border: 1.6px solid var(--gold);
+          box-shadow: 0 6px 14px rgba(212,175,55,0.06);
+          text-decoration: none;
+        }
+        .social svg { width: 18px; height: 18px; display: block; }
+
+        .socials-mobile { display:flex; gap:10px; margin-top:12px; align-items:center; overflow-x:auto; padding:6px 4px; -webkit-overflow-scrolling:touch; justify-content:center; }
+        .social-mobile {
+          flex:0 0 auto;
+          width:46px;
+          height:46px;
+          border-radius:50%;
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          border:1.6px solid var(--gold);
+          background: linear-gradient(180deg, rgba(212,175,55,0.04), rgba(212,175,55,0.015));
+          box-shadow: 0 6px 14px rgba(212,175,55,0.06);
+        }
+        .social-mobile svg { width: 20px; height: 20px; }
+
         .boutique .brand-logo { box-shadow: 0 8px 20px rgba(2,6,23,0.4); }
         .tabs .tab { padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.06); background: transparent; cursor: pointer; color: var(--muted); }
         .tabs .tab.active { background: linear-gradient(90deg,var(--accent),#ff9ae1); color: var(--btn-text); border: none; }
         .gallery .tile img { width:100%; height:180px; object-fit:cover; display:block; border-radius:10px; cursor:pointer; }
         .shop-grid .product img { width:100%; height:140px; object-fit:cover; display:block; cursor:pointer; border-radius:8px; }
         .btn { padding:8px 10px; border-radius:8px; text-decoration:none; display:inline-block; }
-        .btn.ghost { background:transparent; color:inherit; }
         .lightbox-inner img { max-width: 100%; max-height: 100%; border-radius: 10px; display:block; }
 
         @media (min-width: 880px) {
@@ -372,37 +361,37 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
             <h1 id="brand-title" style={{ margin: 0, fontSize: 20, fontWeight: 900 }}>{brandName}</h1>
             {tagline ? <p style={{ margin: "8px 0 0", color: "var(--muted)" }}>{tagline}</p> : null}
 
-            {/* Social icons horizontally in the hero */}
+            {/* Social icons horizontally in the hero — using centralized SvgIcon with golden circles */}
             <div style={{ marginTop: 10 }}>
-              <nav style={{ display: "inline-flex", gap: 8 }} aria-label="social links">
+              <nav className="socials-inline" aria-label="social links">
                 {instagram ? (
-                  <a className="btn" href={socialHref("instagram", instagram)} target="_blank" rel="noreferrer" aria-label="Instagram">
-                    <Icons.instagram />
+                  <a className="social" href={socialHref("instagram", instagram)} target="_blank" rel="noreferrer" aria-label="Instagram">
+                    <SvgIcon name="instagram" alt="instagram" width={18} height={18} useImg />
                   </a>
                 ) : null}
                 {tiktok ? (
-                  <a className="btn" href={socialHref("tiktok", tiktok)} target="_blank" rel="noreferrer" aria-label="TikTok">
-                    <Icons.tiktok />
+                  <a className="social" href={socialHref("tiktok", tiktok)} target="_blank" rel="noreferrer" aria-label="TikTok">
+                    <SvgIcon name="tiktok" alt="tiktok" width={18} height={18} useImg />
                   </a>
                 ) : null}
                 {pinterest ? (
-                  <a className="btn" href={socialHref("pinterest", pinterest)} target="_blank" rel="noreferrer" aria-label="Pinterest">
-                    <Icons.pinterest />
+                  <a className="social" href={socialHref("pinterest", pinterest)} target="_blank" rel="noreferrer" aria-label="Pinterest">
+                    <SvgIcon name="pinterest" alt="pinterest" width={18} height={18} useImg />
                   </a>
                 ) : null}
                 {website ? (
-                  <a className="btn" href={socialHref("website", website)} target="_blank" rel="noreferrer" aria-label="Website">
-                    <Icons.website />
+                  <a className="social" href={socialHref("website", website)} target="_blank" rel="noreferrer" aria-label="Website">
+                    <SvgIcon name="website" alt="website" width={18} height={18} useImg />
                   </a>
                 ) : null}
                 {email ? (
-                  <a className="btn" href={socialHref("email", email)} aria-label="Email">
-                    <Icons.email />
+                  <a className="social" href={socialHref("email", email)} aria-label="Email">
+                    <SvgIcon name="email" alt="email" width={18} height={18} useImg />
                   </a>
                 ) : null}
                 {phone ? (
-                  <a className="btn" href={socialHref("phone", phone)} aria-label="Phone">
-                    <Icons.phone />
+                  <a className="social" href={socialHref("phone", phone)} aria-label="Phone">
+                    <SvgIcon name="phone" alt="phone" width={18} height={18} useImg />
                   </a>
                 ) : null}
               </nav>
@@ -422,10 +411,7 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
                 <h3 style={{ margin: "0 0 12px" }}>Lookbook</h3>
                 <div className="gallery" aria-label="Lookbook gallery" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
                   {galleryToShow.map((src, i) => (
-                    <div className="tile" key={i} role="button" tabIndex={0} onClick={() => {
-                      // lightbox index must reference works set (if singleCollection used we limited to up to 3)
-                      openWorksLightbox(i);
-                    }} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openWorksLightbox(i); }} aria-label={`Open look ${i + 1}`}>
+                    <div className="tile" key={i} role="button" tabIndex={0} onClick={() => openWorksLightbox(i)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openWorksLightbox(i); }} aria-label={`Open look ${i + 1}`}>
                       <img src={src} alt={`Collection ${i + 1}`} />
                     </div>
                   ))}
@@ -470,7 +456,6 @@ export default function BoutiqueFashionPreview({ data, showFooter = true }: { da
                               </a>
                             )}
                             <button className="btn ghost" onClick={() => {
-                              // Details fallback: scroll to contact tab
                               setActiveTab("contact");
                               try { const el = document.querySelector("#contact"); if (el) (el as HTMLElement).scrollIntoView({ behavior: "smooth" }); } catch {}
                             }}>Details</button>

@@ -7,7 +7,7 @@ import OnboardingForm from "@/components/OnboardingForm";
  */
 export default function Page() {
   const questions = [
-    { name: "name", label: "Full name", type: "text", placeholder: "e.g. Ravi Patel", required: true },
+    { name: "name", label: "Full name", type: "text", placeholder: "e.g. Ray Charles", required: true },
     { name: "role", label: "Title / Role", type: "text", placeholder: "e.g. Full‑Stack Developer • React / Node.js" },
     { name: "bio", label: "Short bio", type: "textarea", placeholder: "One-line intro for visitors" },
 
@@ -24,12 +24,12 @@ export default function Page() {
     { name: "projects", label: "Projects (one per line 'Title | short description | image filename or URL')", type: "textarea", placeholder: "Palette — Design system | React + Storybook | palette.png" },
     { name: "projectImages", label: "Project images (up to 3)", type: "files", maxFiles: 3, accept: "image/*" },
 
-    { name: "snippets", label: "Code snippets (paste)", type: "textarea", placeholder: "// useful snippet or example" },
+    // Changed from `snippets` -> `certifications`
+    { name: "certifications", label: "Certifications", type: "textarea", placeholder: "List your certifications here, each per line" },
 
     { name: "resume", label: "Resume (PDF)", type: "files", maxFiles: 1, accept: ".pdf,application/pdf" },
 
-    { name: "hire_link", label: "Hire / booking link (optional)", type: "url", placeholder: "https://calendly.com/you" },
-    { name: "profile_url", label: "Public profile URL (for QR)", type: "url", placeholder: "https://example.com/yourprofile" },
+    { name: "hire_link", label: "Hire / booking link (optional)", type: "url", placeholder: "https://wa.me/+233..." },
   ];
 
   return <OnboardingForm slug="developer" fields={questions as unknown as any} />;

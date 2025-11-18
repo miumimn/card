@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import SvgIcon from "@/components/Icon";
 
 type DevData = {
   name?: string;
@@ -16,7 +17,8 @@ type DevData = {
   tech?: string[] | string;
   projects?: any;
   projectImages?: string[] | string;
-  snippets?: string;
+  certifications?: string; // new primary field
+  snippets?: string; // legacy field (fallback)
   resume?: string;
   hire_link?: string;
   profile_url?: string;
@@ -114,8 +116,19 @@ export default function DeveloperPreview({ data, showFooter = true }: { data?: D
     projectScreens.forEach((img, i) => projects.push({ title: `Project ${i + 1}`, desc: "", image: img }));
   }
 
-  const snippetsRaw = merged.snippets ?? merged.extra_fields?.snippets ?? "";
-  const snippets = typeof snippetsRaw === "string" ? snippetsRaw : (Array.isArray(snippetsRaw) ? snippetsRaw.join("\n\n") : "");
+  // prefer new 'certifications' field; fall back to legacy 'snippets' for compatibility
+  const certificationsRaw =
+    merged.certifications ??
+    merged.snippets ??
+    merged.extra_fields?.certifications ??
+    merged.extra_fields?.snippets ??
+    "";
+  const certifications =
+    typeof certificationsRaw === "string"
+      ? certificationsRaw
+      : Array.isArray(certificationsRaw)
+        ? certificationsRaw.join("\n\n")
+        : "";
 
   const qrData = asString(merged.profile_url) || clientHref || "";
 
@@ -144,7 +157,7 @@ body.dev-page{ margin:0; font-family:Inter,system-ui,Arial; background:linear-gr
 .projects{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); margin-top:12px; }
 .project{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.02); }
 .project img{ width:100%; height:160px; object-fit:cover; border-radius:8px; margin-top:8px; cursor:pointer; }
-.code-block{ background:#071018; padding:12px; border-radius:8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; color:#9fe3c6; font-size:13px; overflow:auto; }
+.code-block{ background:#071018; padding:12px; border-radius:8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; color:#9fe3c6; font-size:13px; overflow:auto; white-space:pre-wrap; }
 .cta-row{ display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap; justify-content:space-between }
 .primary-btn{ padding:10px 14px; border-radius:10px; background:linear-gradient(90deg,#00d4a4,#6ee7b7); color:#02110b; font-weight:800; text-decoration:none; }
 .lightbox{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(6,6,6,0.85); z-index:1200; }
@@ -162,11 +175,31 @@ body.dev-page{ margin:0; font-family:Inter,system-ui,Arial; background:linear-gr
               {bio ? <div style={{ marginTop: 8, color: "var(--muted)" }}>{bio}</div> : null}
 
               <div className="links" aria-label="social links">
-                {github ? <a className="link" href={github} target="_blank" rel="noreferrer"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden><path fill="currentColor" d="M12 .5A12 12 0 0 0 0 12.6c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2.1c-3.3.7-4-1.6-4-1.6-.5-1.2-1.2-1.5-1.2-1.5-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 .1.7 1.9 2.8 2.7 1.6.7 3.3.5 4-.4 0-.5.3-1 .5-1.4-2.6-.3-5.4-1.3-5.4-5.9 0-1.3.5-2.4 1.3-3.3-.1-.3-.6-1.7.1-3.6 0 0 1-.3 3.3 1.3a11 11 0 0 1 6 0c2.3-1.6 3.3-1.3 3.3-1.3.7 1.9.2 3.3.1 3.6.8.9 1.3 2 1.3 3.3 0 4.6-2.8 5.6-5.4 5.9.3.3.6.8.6 1.6v2.4c0 .3.2.7.8.6A12 12 0 0 0 12 .5z"/></svg> GitHub</a> : null}
-                {npm ? <a className="link" href={npm} target="_blank" rel="noreferrer"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden><path fill="currentColor" d="M3 3v18h18V3H3zm14 5v9h-2V8h2zm-4 0v9H9V8h4zM6 6h2v9H6V6z"/></svg> npm</a> : null}
-                {website ? <a className="link" href={website} target="_blank" rel="noreferrer">WWW</a> : null}
-                {twitter ? <a className="link" href={twitter} target="_blank" rel="noreferrer">Twitter</a> : null}
-                {linkedin ? <a className="link" href={linkedin} target="_blank" rel="noreferrer">LinkedIn</a> : null}
+                {github ? (
+                  <a className="link" href={github} target="_blank" rel="noreferrer" aria-label="GitHub">
+                    <SvgIcon name="github" width={16} height={16} useImg /> GitHub
+                  </a>
+                ) : null}
+                {npm ? (
+                  <a className="link" href={npm} target="_blank" rel="noreferrer" aria-label="npm">
+                    <SvgIcon name="npm" width={16} height={16} useImg /> npm
+                  </a>
+                ) : null}
+                {website ? (
+                  <a className="link" href={website} target="_blank" rel="noreferrer" aria-label="Website">
+                    <SvgIcon name="website" width={16} height={16} useImg /> Website
+                  </a>
+                ) : null}
+                {twitter ? (
+                  <a className="link" href={twitter} target="_blank" rel="noreferrer" aria-label="Twitter">
+                    <SvgIcon name="twitter" width={16} height={16} useImg /> Twitter
+                  </a>
+                ) : null}
+                {linkedin ? (
+                  <a className="link" href={linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn">
+                    <SvgIcon name="linkedin" width={16} height={16} useImg /> LinkedIn
+                  </a>
+                ) : null}
               </div>
             </div>
           </header>
@@ -174,7 +207,7 @@ body.dev-page{ margin:0; font-family:Inter,system-ui,Arial; background:linear-gr
           <div className="tabs" role="tablist" aria-label="Profile tabs">
             <button className={`tab ${active === "overview" ? "active" : ""}`} onClick={() => setActive("overview")}>Overview</button>
             <button className={`tab ${active === "projects" ? "active" : ""}`} onClick={() => setActive("projects")}>Projects</button>
-            <button className={`tab ${active === "snippets" ? "active" : ""}`} onClick={() => setActive("snippets")}>Snippets</button>
+            <button className={`tab ${active === "certifications" ? "active" : ""}`} onClick={() => setActive("certifications")}>Certifications</button>
             <button className={`tab ${active === "resume" ? "active" : ""}`} onClick={() => setActive("resume")}>Resume</button>
           </div>
 
@@ -217,13 +250,13 @@ body.dev-page{ margin:0; font-family:Inter,system-ui,Arial; background:linear-gr
               ) : (showFooter ? <div style={{ color: "var(--muted)" }}>Add projects (Title | Description | image) in onboarding</div> : <div style={{ color: "var(--muted)" }}>No projects yet.</div>)}
             </section>
 
-            <section className={`panel ${active === "snippets" ? "active" : ""}`} aria-hidden={active !== "snippets"}>
-              {snippets ? (
+            <section className={`panel ${active === "certifications" ? "active" : ""}`} aria-hidden={active !== "certifications"}>
+              {certifications ? (
                 <>
-                  <h3 style={{ margin: 0 }}>Snippets</h3>
-                  <pre className="code-block" aria-hidden="true">{snippets}</pre>
+                  <h3 style={{ margin: 0 }}>Certifications</h3>
+                  <pre className="code-block" aria-hidden="true">{certifications}</pre>
                 </>
-              ) : (showFooter ? <div style={{ color: "var(--muted)" }}>Share some useful code snippets or examples here.</div> : null)}
+              ) : (showFooter ? <div style={{ color: "var(--muted)" }}>Share certifications acquired here.</div> : <div style={{ color: "var(--muted)" }}>No certifications listed.</div>)}
             </section>
 
             <section className={`panel ${active === "resume" ? "active" : ""}`} aria-hidden={active !== "resume"}>

@@ -6,6 +6,8 @@ import OnboardingForm from "@/components/OnboardingForm";
  * Influencer onboarding page — mobile-first, friendly fields for creators/influencers.
  * - Uses the shared OnboardingForm which will auto-chunk fields into mobile-friendly steps.
  * - Fields mark optional socials as not required (users can skip).
+ *
+ * NOTE: Added snapchat field per request.
  */
 
 export default function Page() {
@@ -25,10 +27,11 @@ export default function Page() {
     { name: "tiktok", label: "TikTok handle (optional)", type: "text", placeholder: "@yourhandle" },
     { name: "youtube", label: "YouTube / Showreel URL (optional)", type: "url", placeholder: "https://youtube.com/..." },
     { name: "website", label: "Website (optional)", type: "url", placeholder: "https://your-site.com" },
+    { name: "snapchat", label: "Snapchat handle (optional)", type: "text", placeholder: "@yourhandle" }, // new
 
     // Media & assets
     { name: "profileImage", label: "Profile photo", type: "files", maxFiles: 1, accept: "image/*" },
-    { name: "galleryImages", label: "Gallery / feed images (up to 6)", type: "files", maxFiles: 6, accept: "image/*" },
+    { name: "galleryImages", label: "Gallery / feed images (up to 3)", type: "files", maxFiles: 3, accept: "image/*" },
     { name: "mediaKit", label: "Media kit (PDF, optional)", type: "files", maxFiles: 1, accept: "application/pdf" },
 
     // Work / offerings

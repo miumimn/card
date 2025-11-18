@@ -74,7 +74,7 @@ export default function ExampleOrderSubmit({ cart, customer }: any) {
     return (
       <div className="order-success">
         <h3>Order submitted</h3>
-        <p>Thanks — your NexCard order is being processed.</p>
+        <p>Thanks, your NexCard order is being processed.</p>
 
         <div className="order-meta">
           <div><strong>Order ID</strong></div>
@@ -85,7 +85,7 @@ export default function ExampleOrderSubmit({ cart, customer }: any) {
           <a href={`/order/${success.orderId}`} className="btn btn-ghost">Print / Save</a>
           <button className="btn btn-primary" onClick={() => {
             // optionally redirect to a "Continue order" or editor page
-            window.location.href = "/editor";
+            window.location.href = "/editor"; //will return to this
           }}>Continue</button>
         </div>
       </div>

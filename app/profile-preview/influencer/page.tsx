@@ -1,0 +1,15 @@
+import React, { Suspense } from "react";
+import InfluencerPreviewClient from "./InfluencerPreviewClient";
+
+/**
+ * Server page for /profile-preview/influencer
+ * Mounts the client wrapper inside Suspense so client-only hooks (useSearchParams)
+ * run on the client and do not cause CSR bailout errors during prerender.
+ */
+export default function Page() {
+  return (
+    <Suspense fallback={<p style={{ textAlign: "center", padding: 20 }}>Loading preview…</p>}>
+      <InfluencerPreviewClient />
+    </Suspense>
+  );
+}
