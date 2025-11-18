@@ -57,7 +57,7 @@ const RAW_TEMPLATES: Template[] = [
   { title: "Gardener", slug: "gardener", thumb: "/thumbs/gardener.png", desc: "Landscaping & maintenance", category: "business" },
   { title: "IT Specialist", slug: "it-specialist", thumb: "/thumbs/it-specialist.png", desc: "Tech support & consulting", category: "individual" },
   { title: "Optician", slug: "optician", thumb: "/thumbs/optician.png", desc: "Eye tests & frames", category: "business" },
-    { title: "Boutique Fashion", slug: "boutique-fashion", thumb: "/thumbs/boutique-fashion.png", desc: "Lookbook & shop card", category: "business" },
+   
   { title: "Event Planner", slug: "event-planner", thumb: "/thumbs/event-planner.png", desc: "Events & packages", category: "business" },
 ];
 
