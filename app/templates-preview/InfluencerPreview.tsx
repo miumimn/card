@@ -108,7 +108,7 @@ async function findWorkingVariant(candidate: string) {
   } catch {}
 
   try {
-    const urlObj = new URL(candidate, window.location.origin);
+    const urlObj = new URL(candidate, typeof window !== "undefined" ? window.location.origin : "http://localhost");
     const path = urlObj.pathname;
     const idx = path.indexOf("/onboarding-uploads/");
     if (idx >= 0) {
@@ -122,6 +122,7 @@ async function findWorkingVariant(candidate: string) {
   const uniq = Array.from(new Set(tries));
   for (const t of uniq) {
     if (!t) continue;
+    // eslint-disable-next-line no-await-in-loop
     const ok = await probeImage(t);
     if (ok) return t;
   }
@@ -135,6 +136,11 @@ export default function InfluencerPreview({ data, handleSelectTemplate, onBack, 
   const [resolvedGallery, setResolvedGallery] = useState<string[]>([]);
   const [resolving, setResolving] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [clientHref, setClientHref] = useState<string>("");
+
+  useEffect(() => {
+    try { setClientHref(window.location.href || ""); } catch { setClientHref(""); }
+  }, []);
 
   useEffect(() => {
     const update = () => setIsMobile(typeof window !== "undefined" && window.innerWidth < 880);
@@ -283,145 +289,318 @@ export default function InfluencerPreview({ data, handleSelectTemplate, onBack, 
     return false;
   })();
 
+  // build share URL for this influencer profile (prefers explicit public profile_url)
+  const getShareUrl = (): string => {
+    if (merged.profile_url) return merged.profile_url;
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const idPart = merged.id ?? merged.slug ?? merged._id ?? "";
+      if (idPart) return `${origin}/profile-preview/influencer?id=${encodeURIComponent(String(idPart))}`;
+    } catch {}
+    return clientHref || (typeof window !== "undefined" ? window.location.href : "");
+  };
+
+  const shareProfile = async () => {
+    const url = getShareUrl();
+    const shareData = { title: `${name} — NexProfile`, text: `Check out ${name} on NexProfile`, url };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else if (navigator.clipboard) { await navigator.clipboard.writeText(url); alert("Profile link copied to clipboard"); }
+      else {
+        const tmp = document.createElement("input");
+        document.body.appendChild(tmp);
+        tmp.value = url;
+        tmp.select();
+        document.execCommand("copy");
+        tmp.remove();
+        alert("Profile link copied to clipboard");
+      }
+    } catch (err) {
+      alert("Could not share profile. Copied link to clipboard as fallback.");
+      try { await navigator.clipboard.writeText(url); } catch {}
+    }
+  };
+
   return (
-    <div style={{ padding: 22, minHeight: "100vh", background: "linear-gradient(180deg,#0b1220 0%, #07192a 100%)" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", gap: 20, flexDirection: isMobile ? "column" : "row" }}>
-        <aside style={{ width: isMobile ? "100%" : 260, padding: 16, borderRadius: 12, background: "rgba(255,255,255,0.02)" }}>
-          <div style={{ width: isMobile ? 88 : 100, height: isMobile ? 88 : 100, borderRadius: "50%", backgroundSize: "cover", backgroundPosition: "center", backgroundImage: `url("${profileImage}")`, margin: "0 auto" }} />
-          <h2 style={{ textAlign: "center", marginTop: 12 }}>{name}</h2>
-          {role ? <p style={{ textAlign: "center", color: "#94a3b8" }}>{role}</p> : null}
+    <>
+      <style>{`
+:root{
+  --bg-gradient: linear-gradient(180deg,#0b1220 0%, #07192a 100%);
+  --card-surface: rgba(255,255,255,0.02);
+  --text-light: #e8f0f8;
+  --muted-light: #9fb0c2;
+  --accent: #4f46e5;
+  --accent-2: #06b6d4;
+  --glass: rgba(255,255,255,0.03);
+  --radius:12px;
+  --max-width:1100px;
+}
 
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 12 }}>
-            {socials.map((s, i) => (
-              <a key={`${s.key}-${i}`} href={s.url} target="_blank" rel="noreferrer" style={{ width: 36, height: 36, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 8, background: "#081226", color: "#fff", textDecoration: "none" }}>
-                <img src={`/svg/${s.key}.svg`} alt={s.key} width={18} height={18} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-              </a>
-            ))}
-          </div>
+/* light mode overrides for high contrast like NormalPreview */
+@media (prefers-color-scheme: light) {
+  :root{
+    --bg-gradient: linear-gradient(180deg,#ffffff 0%, #f8fafc 100%);
+    --card-surface: rgba(2,6,23,0.03);
+    --text-light: #0b1220;
+    --muted-light: #475569;
+    --accent: #2563eb;
+    --accent-2: #06b6d4;
+    --glass: rgba(11,17,32,0.04);
+  }
+}
 
-          <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-            <button className="btn" onClick={() => {}} style={{ padding: "8px 12px", borderRadius: 999, background: "linear-gradient(90deg,#4f46e5,#06b6d4)", color: "#06101a", border: "none" }}>Work With Me</button>
-          </div>
-        </aside>
+/* ensure dark explicitly sets white text for main pieces */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-light: #ffffff;
+    --muted-light: #9fb0c2;
+  }
+}
 
-        <main style={{ flex: 1, padding: 16, borderRadius: 12, background: "rgba(255,255,255,0.02)" }}>
-          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            <button className={`tab ${tab === "about" ? "active" : ""}`} onClick={() => setTab("about")}>About</button>
-            <button className={`tab ${tab === "links" ? "active" : ""}`} onClick={() => setTab("links")}>Links</button>
-            <button className={`tab ${tab === "contact" ? "active" : ""}`} onClick={() => setTab("contact")}>Contact</button>
-          </div>
+.container {
+  padding: 22px;
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  color: var(--text-light);
+}
+.wrap { max-width: var(--max-width); margin: 0 auto; display:flex; gap:20px; }
+@media (max-width:880px) { .wrap { flex-direction:column; padding: 0 12px; } }
 
-          {tab === "about" && (
-            <section>
-              <h3>About</h3>
-              <p style={{ color: "#94a3b8" }}>{bio || "No bio provided."}</p>
+.aside {
+  width: 260px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--card-surface);
+}
+@media (max-width:880px) { .aside { width:100%; } }
 
-              {services.length ? (
-                <div style={{ marginTop: 12 }}>
-                  <h4>Services</h4>
-                  <div style={{ color: "#94a3b8" }}>{services.join(", ")}</div>
-                </div>
-              ) : null}
+.avatar {
+  border-radius:50%;
+  background-size:cover;
+  background-position:center;
+  margin: 0 auto;
+}
+.avatar.small { width:88px; height:88px; }
+.avatar.large { width:100px; height:100px; }
 
-              {rates ? (
-                <div style={{ marginTop: 12 }}>
-                  <h4>Rates</h4>
-                  <div style={{ color: "#94a3b8" }}>{rates}</div>
-                </div>
-              ) : null}
+.name { text-align:center; margin-top:12px; font-weight:800; color:var(--text-light); }
+.role { text-align:center; color:var(--muted-light); margin:6px 0 0; }
 
-              {notes ? (
-                <div style={{ marginTop: 12 }}>
-                  <h4>Notes</h4>
-                  <div style={{ color: "#94a3b8" }}>{notes}</div>
-                </div>
-              ) : null}
+.social-row {
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  margin-top:12px;
+  flex-wrap:wrap;
+  align-items:center;
+}
 
-              {hasMediaKit ? (
-                <div style={{ marginTop: 12 }}>
-                  <h4>Media kit</h4>
-                  {Array.isArray(merged.mediaKit) ? (
-                    <a href={merged.mediaKit[0]} target="_blank" rel="noreferrer">Download media kit</a>
-                  ) : (
-                    <a href={merged.mediaKit} target="_blank" rel="noreferrer">Download media kit</a>
-                  )}
-                </div>
-              ) : null}
+/* keep social icon buttons visible in both themes */
+.icon-btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:36px;
+  height:36px;
+  border-radius:8px;
+  background: rgba(0,0,0,0.18);
+  color: #fff;
+  text-decoration:none;
+  border: none;
+}
+@media (prefers-color-scheme: light) {
+  .icon-btn { background: rgba(0,0,0,0.06); color: #07101a; }
+}
 
-              {resolvedGallery.length ? (
-                <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: galleryCols, gap: 8 }}>
-                  {resolvedGallery.map((src: string, i: number) => (
-                    <img
-                      key={i}
-                      src={src}
-                      alt={`gallery-${i}`}
-                      style={{ width: "100%", height: galleryImgHeight, objectFit: "cover", borderRadius: 6, cursor: "pointer" }}
-                      onClick={() => openLightbox(src)}
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </section>
-          )}
+/* main panel */
+.main {
+  flex:1;
+  padding:16px;
+  border-radius: var(--radius);
+  background: var(--card-surface);
+}
+.tabs { display:flex; gap:8px; margin-bottom:12px; }
+.tab {
+  padding:8px 12px;
+  border-radius:10px;
+  background:transparent;
+  color:var(--muted-light);
+  font-weight:700;
+  border:none;
+  cursor:pointer;
+}
+.tab.active { color: #06101a; background: linear-gradient(90deg,var(--accent),var(--accent-2)); box-shadow:0 8px 24px rgba(6,16,26,0.28); }
 
-          {tab === "links" && (
-            <section>
-              <h3>Links</h3>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-                {socials.map((s, i) => (
-                  <a key={i} href={s.url} target="_blank" rel="noreferrer" style={{ display: "flex", gap: 8, alignItems: "center", padding: 8, background: "#071226", borderRadius: 8 }}>
-                    <img src={`/svg/${s.key}.svg`} alt={s.key} width={18} height={18} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                    <span style={{ color: "#fff" }}>{s.url.replace(/^https?:\/\//, "")}</span>
-                  </a>
-                ))}
-              </div>
+.panel h3 { margin-top:0; color:var(--text-light); }
+.muted { color: var(--muted-light); }
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 8 }}>
-                {topLinks.length ? topLinks.map((l: any, i: number) => (
-                  <a key={i} href={l.url || "#"} target="_blank" rel="noreferrer" style={{ padding: 12, background: "#0b1228", borderRadius: 8 }}>
-                    <strong style={{ color: "#fff" }}>{l.title || l.name || l.url}</strong>
-                    {l.source ? <div style={{ color: "#94a3b8" }}>{l.source}</div> : null}
-                  </a>
-                )) : <div style={{ color: "#94a3b8" }}>No links provided.</div>}
-              </div>
-            </section>
-          )}
+.gallery-grid { display:grid; gap:8px; margin-top:12px; }
+@media (min-width:880px) {
+  .gallery-grid.cols-2 { grid-template-columns: repeat(2,1fr); }
+  .gallery-grid.cols-auto { grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
+}
+@media (max-width:880px) {
+  .gallery-grid { grid-template-columns: repeat(2,1fr); }
+}
 
-          {tab === "contact" && (
-            <section>
-              <h3>Contact</h3>
-              <p style={{ color: "#94a3b8" }}><strong>Email:</strong> {email ? <a href={`mailto:${email}`}>{email}</a> : "—"}</p>
-              <p style={{ color: "#94a3b8" }}><strong>Phone:</strong> {phone ? <a href={`tel:${phone}`}>{phone}</a> : "—"}</p>
-              {merged.booking_link ? <p style={{ color: "#94a3b8" }}><strong>Booking:</strong> <a href={firstVal(merged.booking_link)} target="_blank" rel="noreferrer">{firstVal(merged.booking_link)}</a></p> : null}
-              {website ? <p style={{ color: "#94a3b8" }}><strong>Website:</strong> <a href={website} target="_blank" rel="noreferrer">{website}</a></p> : null}
+/* contact area */
+.contact-qr-row { display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+.share-btn { padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); background: transparent; color: var(--text-light); cursor:pointer; }
+@media (prefers-color-scheme: light) {
+  .share-btn { color: var(--text-light); border-color: rgba(11,17,32,0.06); }
+}
+`}</style>
 
-              {socials.length ? (
-                <div style={{ marginTop: 12 }}>
-                  <h4>Socials</h4>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {socials.map((s, i) => (
-                      <a key={i} href={s.url} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: 8, background: "#071226", borderRadius: 8 }}>
-                        <img src={`/svg/${s.key}.svg`} alt={s.key} width={18} height={18} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                        <span style={{ color: "#fff" }}>{s.url.replace(/^https?:\/\//, "")}</span>
-                      </a>
+      <div className="container">
+        <div className="wrap" style={{ maxWidth: 1100, margin: "0 auto", display: "flex", gap: 20, flexDirection: isMobile ? "column" : "row" }}>
+          <aside className="aside" style={{ width: isMobile ? "100%" : 260 }}>
+            <div className={`avatar ${isMobile ? "small" : "large"}`} style={{ backgroundImage: `url("${profileImage}")` }} />
+            <h2 className="name">{name}</h2>
+            {role ? <p className="role">{role}</p> : null}
+
+            <div className="social-row" aria-label="Social links">
+              {socials.map((s, i) => (
+                <a key={`${s.key}-${i}`} className="icon-btn" href={s.url} target="_blank" rel="noreferrer" aria-label={s.key} title={s.key}>
+                  <img src={`/svg/${s.key}.svg`} alt={s.key} width={18} height={18} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                </a>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              <button className="share-btn" onClick={() => { /* placeholder action for Work With Me */ }}>Work With Me</button>
+            </div>
+          </aside>
+
+          <main className="main">
+            <div className="tabs" role="tablist" aria-label="profile tabs">
+              <button className={`tab ${tab === "about" ? "active" : ""}`} onClick={() => setTab("about")}>About</button>
+              <button className={`tab ${tab === "links" ? "active" : ""}`} onClick={() => setTab("links")}>Links</button>
+              <button className={`tab ${tab === "contact" ? "active" : ""}`} onClick={() => setTab("contact")}>Contact</button>
+            </div>
+
+            {tab === "about" && (
+              <section>
+                <h3>About</h3>
+                <p className="muted">{bio || "No bio provided."}</p>
+
+                {services.length ? (
+                  <div style={{ marginTop: 12 }}>
+                    <h4>Services</h4>
+                    <div className="muted">{services.join(", ")}</div>
+                  </div>
+                ) : null}
+
+                {rates ? (
+                  <div style={{ marginTop: 12 }}>
+                    <h4>Rates</h4>
+                    <div className="muted">{rates}</div>
+                  </div>
+                ) : null}
+
+                {notes ? (
+                  <div style={{ marginTop: 12 }}>
+                    <h4>Notes</h4>
+                    <div className="muted">{notes}</div>
+                  </div>
+                ) : null}
+
+                {hasMediaKit ? (
+                  <div style={{ marginTop: 12 }}>
+                    <h4>Media kit</h4>
+                    {Array.isArray(merged.mediaKit) ? (
+                      <a href={merged.mediaKit[0]} target="_blank" rel="noreferrer">Download media kit</a>
+                    ) : (
+                      <a href={merged.mediaKit} target="_blank" rel="noreferrer">Download media kit</a>
+                    )}
+                  </div>
+                ) : null}
+
+                {resolvedGallery.length ? (
+                  <div className={`gallery-grid ${isMobile ? "cols-2" : "cols-auto"}`} style={{ marginTop: 12, gap: 8 }}>
+                    {resolvedGallery.map((src: string, i: number) => (
+                      <img
+                        key={i}
+                        src={src}
+                        alt={`gallery-${i}`}
+                        style={{ width: "100%", height: galleryImgHeight, objectFit: "cover", borderRadius: 6, cursor: "pointer" }}
+                        onClick={() => openLightbox(src)}
+                      />
                     ))}
                   </div>
+                ) : null}
+              </section>
+            )}
+
+            {tab === "links" && (
+              <section>
+                <h3>Links</h3>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                  {socials.map((s, i) => (
+                    <a key={i} href={s.url} target="_blank" rel="noreferrer" style={{ display: "flex", gap: 8, alignItems: "center", padding: 8, background: "var(--card-surface)", borderRadius: 8 }}>
+                      <img src={`/svg/${s.key}.svg`} alt={s.key} width={18} height={18} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                      <span style={{ color: "var(--text-light)" }}>{s.url.replace(/^https?:\/\//, "")}</span>
+                    </a>
+                  ))}
                 </div>
-              ) : null}
-            </section>
-          )}
-        </main>
-      </div>
 
-      <div style={{ maxWidth: 1100, margin: "20px auto 0", display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        {showFooter ? <button className="btn" onClick={handleUseTemplate} style={{ padding: "8px 12px" }}>Use This Template</button> : null}
-      </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 8 }}>
+                  {topLinks.length ? topLinks.map((l: any, i: number) => (
+                    <a key={i} href={l.url || "#"} target="_blank" rel="noreferrer" style={{ padding: 12, background: "var(--card-surface)", borderRadius: 8 }}>
+                      <strong style={{ color: "var(--text-light)" }}>{l.title || l.name || l.url}</strong>
+                      {l.source ? <div style={{ color: "var(--muted-light)" }}>{l.source}</div> : null}
+                    </a>
+                  )) : <div className="muted">No links provided.</div>}
+                </div>
+              </section>
+            )}
 
-      {lightbox ? (
-        <div className="lightbox" role="dialog" aria-modal="true" onClick={closeLightbox} style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(3,7,18,0.85)", zIndex: 1400 }}>
-          <img src={lightbox} alt="full" style={{ maxWidth: "92%", maxHeight: "92%", borderRadius: 10 }} onClick={(e) => e.stopPropagation()} />
+            {tab === "contact" && (
+              <section>
+                <h3>Contact</h3>
+                <p className="muted"><strong>Email:</strong> {email ? <a href={`mailto:${email}`}>{email}</a> : "—"}</p>
+                <p className="muted"><strong>Phone:</strong> {phone ? <a href={`tel:${phone}`}>{phone}</a> : "—"}</p>
+                {merged.booking_link ? <p className="muted"><strong>Booking:</strong> <a href={firstVal(merged.booking_link)} target="_blank" rel="noreferrer">{firstVal(merged.booking_link)}</a></p> : null}
+                {website ? <p className="muted"><strong>Website:</strong> <a href={website} target="_blank" rel="noreferrer">{website}</a></p> : null}
+
+                {socials.length ? (
+                  <div style={{ marginTop: 12 }}>
+                    <h4>Socials</h4>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {socials.map((s, i) => (
+                        <a key={i} href={s.url} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: 8, background: "var(--card-surface)", borderRadius: 8 }}>
+                          <img src={`/svg/${s.key}.svg`} alt={s.key} width={18} height={18} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                          <span style={{ color: "var(--text-light)" }}>{s.url.replace(/^https?:\/\//, "")}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="contact-qr-row">
+                  <div>
+                    <img id="qr" src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(merged.profile_url || clientHref)}`} alt="QR code" style={{ width: 120, height: 120, borderRadius: 10, background: "white", padding: 8 }} />
+                    <small className="muted" style={{ display: "block", marginTop: 8 }}>Scan to view my profile</small>
+                  </div>
+
+                  <div>
+                    <button onClick={shareProfile} className="share-btn" style={{ padding: "8px 12px" }}>Share NexProfile</button>
+                  </div>
+                </div>
+              </section>
+            )}
+          </main>
         </div>
-      ) : null}
-    </div>
+
+        <div style={{ maxWidth: 1100, margin: "20px auto 0", display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          {showFooter ? <button className="share-btn" onClick={handleUseTemplate} style={{ padding: "8px 12px" }}>Use This Template</button> : null}
+        </div>
+
+        {lightbox ? (
+          <div className="lightbox" role="dialog" aria-modal="true" onClick={closeLightbox} style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(3,7,18,0.85)", zIndex: 1400 }}>
+            <img src={lightbox} alt="full" style={{ maxWidth: "92%", maxHeight: "92%", borderRadius: 10 }} onClick={(e) => e.stopPropagation()} />
+          </div>
+        ) : null}
+      </div>
+    </>
   );
 }

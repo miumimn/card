@@ -13,12 +13,16 @@ export type NormalData = {
   twitter?: string;
   facebook?: string;
   linkedin?: string;
+  tiktok?: string;
+  snapchat?: string;
   website?: string;
   other_links?: string[] | string;
   email?: string;
   phone?: string;
   profile_url?: string;
   follow_link?: string;
+  id?: string | number;
+  slug?: string;
   extra_fields?: any;
 };
 
@@ -40,7 +44,7 @@ function parseList(val: any): string[] {
 }
 
 /** Render social icon from public/svg/{name}.svg with a tiny inline fallback */
-function SocialIcon({ name, size = 20 }: { name: string; size?: number }) {
+function SocialIcon({ name, size = 22 }: { name: string; size?: number }) {
   const src = `/svg/${name}.svg`;
   return (
     <img
@@ -48,7 +52,7 @@ function SocialIcon({ name, size = 20 }: { name: string; size?: number }) {
       width={size}
       height={size}
       alt={`${name} icon`}
-      style={{ display: "block" }}
+      style={{ display: "block", objectFit: "contain" }}
       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
     />
   );
@@ -93,6 +97,8 @@ export default function NormalPreview({ data, showFooter = true }: { data?: Norm
     twitter: String(merged.twitter ?? merged.socials?.twitter ?? "").trim(),
     facebook: String(merged.facebook ?? merged.socials?.facebook ?? "").trim(),
     linkedin: String(merged.linkedin ?? merged.socials?.linkedin ?? "").trim(),
+    tiktok: String(merged.tiktok ?? merged.extra_fields?.tiktok ?? "").trim(),
+    snapchat: String(merged.snapchat ?? merged.extra_fields?.snapchat ?? "").trim(),
     website: String(merged.website ?? merged.socials?.website ?? "").trim(),
   };
 
@@ -140,20 +146,6 @@ export default function NormalPreview({ data, showFooter = true }: { data?: Norm
     URL.revokeObjectURL(url);
   }
 
-  const iconBtnStyle = (enabled = true): React.CSSProperties => ({
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    background: enabled ? "rgba(255,255,255,0.03)" : "transparent",
-    color: enabled ? "var(--accent)" : "rgba(255,255,255,0.12)",
-    border: "1px solid rgba(255,255,255,0.04)",
-    textDecoration: "none",
-    marginRight: 8
-  });
-
   const buildSocialHref = (value: string, provider: string) => {
     if (!value) return "";
     if (/^https?:\/\//.test(value)) return value;
@@ -162,13 +154,77 @@ export default function NormalPreview({ data, showFooter = true }: { data?: Norm
       case "twitter": return `https://twitter.com/${value.replace(/^@/, "")}`;
       case "linkedin": return `https://linkedin.com/in/${value.replace(/^@/, "")}`;
       case "facebook": return `https://facebook.com/${value}`;
+      case "tiktok": return `https://tiktok.com/@${value.replace(/^@/, "")}`;
+      case "snapchat": return `https://www.snapchat.com/add/${value.replace(/^@/, "")}`;
       case "website": return value.startsWith("http") ? value : `https://${value}`;
       default: return value;
     }
   };
 
-  // Highlight intro copy (human-first vibe) — only shown when there are actual highlights
-  const highlightIntro = "Memorable achievements, signature projects or press that tell my story in one glance.";
+  // icon button style (keeps social icon containers consistent and non-shrinking so they scroll horizontally)
+  const iconBtnStyle = (enabled = true): React.CSSProperties => ({
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: "0 0 auto",            // prevent shrinking so horizontal scroll works like Chef template
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    background: enabled ? "rgba(255,255,255,0.03)" : "transparent",
+    color: enabled ? "#fff" : "rgba(255,255,255,0.12)",
+    textDecoration: "none",
+    border: "none",
+    padding: 6,
+    boxSizing: "border-box",
+  });
+
+  // build the URL we should share: prefer explicit profile_url, else public preview route (not the template page)
+  const getShareUrl = (): string => {
+    if (profileUrl) return profileUrl;
+    // prefer canonical public profile if available (merged.profile_url already used),
+    // else build link to the preview route that shows this user's preview (so users share their preview)
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const idPart = merged.id ?? merged.slug ?? merged._id ?? "";
+      if (idPart) {
+        return `${origin}/profile-preview/normal?id=${encodeURIComponent(String(idPart))}`;
+      }
+    } catch {}
+    return clientHref || (typeof window !== "undefined" ? window.location.href : "");
+  };
+
+  // share profile: uses native share API or falls back to copying profile URL
+  const shareProfile = async () => {
+    const url = getShareUrl();
+    const shareData = {
+      title: `${name} — NexProfile`,
+      text: `Check out ${name} on NexProfile`,
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        // simple feedback
+        // eslint-disable-next-line no-alert
+        alert("Profile link copied to clipboard");
+      } else {
+        const tmp = document.createElement("input");
+        document.body.appendChild(tmp);
+        tmp.value = url;
+        tmp.select();
+        document.execCommand("copy");
+        tmp.remove();
+        // eslint-disable-next-line no-alert
+        alert("Profile link copied to clipboard");
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert("Could not share profile. Copied link to clipboard as fallback.");
+      try { await navigator.clipboard.writeText(url); } catch {}
+    }
+  };
 
   return (
     <>
@@ -183,30 +239,103 @@ export default function NormalPreview({ data, showFooter = true }: { data?: Norm
       --glass: rgba(255,255,255,0.03);
       --radius:14px;
       --max-width:920px;
+      --social-gap: 10px;
     }
+    @media (prefers-color-scheme: light) {
+      :root{
+        --bg-gradient: linear-gradient(180deg,#ffffff 0%, #f8fafc 100%);
+        --card-surface: rgba(2,6,23,0.03);
+        --text-light: #0b1220;
+        --muted-light: #475569;
+        --accent: #2563eb;
+        --accent-2: #06b6d4;
+        --glass: rgba(11,17,32,0.04);
+      }
+    }
+
     *,*::before,*::after{box-sizing:border-box}
     html,body{height:100%}
     body.normal{ margin:0; font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial; -webkit-font-smoothing:antialiased; color:var(--text-light); background:var(--bg-gradient); line-height:1.35; }
     .page{ min-height:100vh; width:100%; padding:20px; display:flex; align-items:flex-start; justify-content:center; gap:24px; overflow-x:hidden; }
     .content{ width:100%; max-width:var(--max-width); display:flex; gap:20px; padding:12px; }
-    .profile-col{ flex:0 0 320px; display:flex; flex-direction:column; gap:12px; align-items:center; padding:18px; border-radius:18px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); backdrop-filter: blur(6px); box-shadow: 0 10px 30px rgba(2,6,23,0.45); }
-    .main-col{ flex:1; display:flex; flex-direction:column; gap:12px; padding:18px; border-radius:18px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow: 0 10px 30px rgba(2,6,23,0.38); }
+    .profile-col{ flex:0 0 320px; display:flex; flex-direction:column; gap:12px; align-items:center; padding:18px; border-radius:18px; background: var(--card-surface); backdrop-filter: blur(6px); box-shadow: 0 10px 30px rgba(2,6,23,0.45); }
+    .main-col{ flex:1; display:flex; flex-direction:column; gap:12px; padding:18px; border-radius:18px; background: var(--card-surface); box-shadow: 0 10px 30px rgba(2,6,23,0.38); }
     .avatar{ width:128px; height:128px; border-radius:999px; overflow:hidden; border:4px solid rgba(255,255,255,0.06); box-shadow: 0 12px 30px rgba(6,16,26,0.6); background-size:cover; background-position:center; }
-    .name{ font-size:20px; font-weight:700; margin:6px 0 0; color:var(--text-light); }
-    .role{ margin:0; color:var(--muted-light); font-size:13px; }
-    .actions{ display:flex; gap:10px; margin-top:8px; width:100%; justify-content:center; flex-wrap:wrap; }
-    .btn{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#06101a; font-weight:700; border:none; cursor:pointer; text-decoration:none; }
-    .btn.ghost{ background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--text-light); box-shadow:none; }
+
+    .name{ font-size:20px; font-weight:700; margin:6px 0 0; color:var(--muted-light) !important; }
+    .role{ margin:0; color:var(--muted-light) !important; font-size:13px; }
+
+    .actions{ display:flex; gap:12px; margin-top:8px; width:100%; justify-content:center; flex-wrap:wrap; }
+
+    /* Primary buttons */
+    .btn{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; height:40px; border-radius:999px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#06101a; font-weight:700; border:none; cursor:pointer; text-decoration:none; }
+    .btn.ghost{ background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--text-light); box-shadow:none; height:40px; padding:8px 12px; }
+
+    /* Follow button: restore larger size and ensure visibility on dark backgrounds */
+    .follow {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      height:40px;
+      padding:8px 14px;
+      border-radius:999px;
+      gap:8px;
+      text-decoration:none;
+      font-weight:700;
+      font-size:14px;
+      min-width:96px;
+      border:1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.02); /* subtle bg to be visible on dark */
+      color: var(--muted-light);
+    }
+    @media (prefers-color-scheme: light) {
+      .follow { background: transparent; border-color: rgba(11,17,32,0.06); color: var(--muted-light); }
+      .btn.ghost { border-color: rgba(11,17,32,0.06); color: var(--text-light); }
+    }
+
+    /* Social row: horizontal scrolling like Chef template */
+    .social-row{
+      display:flex;
+      gap: var(--social-gap);
+      align-items:center;
+      margin-top:12px;
+      overflow-x:auto;
+      overflow-y:hidden;         /* ensure only horizontal */
+      padding-bottom:6px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    .social-row > * { flex: 0 0 auto; } /* prevent children from wrapping/shrinking */
+
+    .social-row::-webkit-scrollbar { height:8px; }
+    .social-row::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 99px; }
+
+    .icon-btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:44px;
+      height:44px;
+      border-radius:10px;
+      background: rgba(255,255,255,0.03);
+      text-decoration:none;
+      border:none;
+      padding:6px;
+      box-sizing:border-box;
+      flex: 0 0 auto;
+    }
+    .icon-btn img { width:22px; height:22px; display:block; object-fit:contain; }
+
     .mini-gallery{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:100%; margin-top:10px; }
     .mini-gallery img{ width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:10px; display:block; }
-    .social-row{ display:flex; gap:8px; align-items:center; margin-top:12px; }
     .tabs{ display:flex; gap:10px; border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:6px; align-items:center; }
     .tab{ padding:8px 12px; border-radius:10px; background:transparent; color:var(--muted-light); font-weight:700; cursor:pointer; border:none; }
     .tab.active{ color:#06101a; background:linear-gradient(90deg,var(--accent),var(--accent-2)); box-shadow:0 8px 24px rgba(6,16,26,0.28); }
     .panel{ padding-top:12px; color:var(--muted-light); font-size:15px; }
     .gallery-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:12px; }
     .gallery-grid img{ width:100%; border-radius:10px; aspect-ratio:16/10; object-fit:cover; display:block; }
-    @media (max-width:880px) { .content{ flex-direction:column; padding:8px; } .profile-col{ width:100%; flex:unset; align-items:center; } .main-col{ width:100%; } .gallery-grid{ grid-template-columns:repeat(2,1fr); } }
+    .contact-qr-row{ display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+    @media (max-width:880px) { .content{ flex-direction:column; padding:8px; } .profile-col{ width:100%; flex:unset; align-items:center; } .main-col{ width:100%; } .gallery-grid{ grid-template-columns:repeat(2,1fr); } .contact-qr-row{ flex-direction:row; } }
     ` }} />
 
       <div className="page normal" role="application" aria-label="Profile page preview" style={{ minHeight: "100vh" }}>
@@ -219,7 +348,7 @@ export default function NormalPreview({ data, showFooter = true }: { data?: Norm
             <div className="actions">
               <button id="saveVcard" className="btn" onClick={downloadVCard}>Save</button>
               <a
-                className="btn ghost"
+                className="follow"
                 href={followLink || profileUrl || "#"}
                 target={followLink || profileUrl ? "_blank" : undefined}
                 rel={followLink || profileUrl ? "noreferrer" : undefined}
@@ -228,33 +357,43 @@ export default function NormalPreview({ data, showFooter = true }: { data?: Norm
               </a>
             </div>
 
-            <div className="social-row" aria-label="Social links">
+            <nav className="social-row" aria-label="Social links">
               {socialsObj.instagram ? (
-                <a href={buildSocialHref(socialsObj.instagram, "instagram")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="Instagram">
+                <a className="icon-btn" href={buildSocialHref(socialsObj.instagram, "instagram")} target="_blank" rel="noreferrer" aria-label="Instagram" title="Instagram">
                   <SocialIcon name="instagram" />
                 </a>
-              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><SocialIcon name="instagram" /></span> : null)}
+              ) : (showFooter ? <span className="icon-btn" aria-hidden><SocialIcon name="instagram" /></span> : null)}
+
+              {socialsObj.tiktok ? (
+                <a className="icon-btn" href={buildSocialHref(socialsObj.tiktok, "tiktok")} target="_blank" rel="noreferrer" aria-label="TikTok" title="TikTok">
+                  <SocialIcon name="tiktok" />
+                </a>
+              ) : null}
+
+              {socialsObj.snapchat ? (
+                <a className="icon-btn" href={buildSocialHref(socialsObj.snapchat, "snapchat")} target="_blank" rel="noreferrer" aria-label="Snapchat" title="Snapchat">
+                  <SocialIcon name="snapchat" />
+                </a>
+              ) : null}
 
               {socialsObj.twitter ? (
-                <a href={buildSocialHref(socialsObj.twitter, "twitter")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="Twitter">
+                <a className="icon-btn" href={buildSocialHref(socialsObj.twitter, "twitter")} target="_blank" rel="noreferrer" aria-label="Twitter" title="Twitter">
                   <SocialIcon name="twitter" />
                 </a>
-              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><SocialIcon name="twitter" /></span> : null)}
+              ) : (showFooter ? <span className="icon-btn" aria-hidden><SocialIcon name="twitter" /></span> : null)}
 
               {socialsObj.linkedin ? (
-                <a href={buildSocialHref(socialsObj.linkedin, "linkedin")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="LinkedIn">
+                <a className="icon-btn" href={buildSocialHref(socialsObj.linkedin, "linkedin")} target="_blank" rel="noreferrer" aria-label="LinkedIn" title="LinkedIn">
                   <SocialIcon name="linkedin" />
                 </a>
-              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><SocialIcon name="linkedin" /></span> : null)}
+              ) : (showFooter ? <span className="icon-btn" aria-hidden><SocialIcon name="linkedin" /></span> : null)}
 
               {socialsObj.website ? (
-                <a href={buildSocialHref(socialsObj.website, "website")} target="_blank" rel="noreferrer" style={iconBtnStyle(true)} aria-label="Website">
+                <a className="icon-btn" href={buildSocialHref(socialsObj.website, "website")} target="_blank" rel="noreferrer" aria-label="Website" title="Website">
                   <SocialIcon name="link" />
                 </a>
-              ) : (showFooter ? <span style={iconBtnStyle(false)} aria-hidden><SocialIcon name="link" /></span> : null)}
-            </div>
-
-            {/* removed horizontal photos under actions - photos are shown only in About (gallery-grid) */}
+              ) : (showFooter ? <span className="icon-btn" aria-hidden><SocialIcon name="link" /></span> : null)}
+            </nav>
           </aside>
 
           <main className="main-col" aria-label="Profile content">
@@ -278,13 +417,11 @@ export default function NormalPreview({ data, showFooter = true }: { data?: Norm
               </div>
             </section>
 
-            <section id="highlights" className="panel" role="tabpanel" style={{ display: tab === "highlights" ? "block" : "none" }}>
-              {/* Only render highlights content when the user actually uploaded highlights (photos or other links).
-                  If there's no content, show nothing (as requested). */}
+            <section id="highlights" className="panel" style={{ display: tab === "highlights" ? "block" : "none" }}>
               {hasHighlights ? (
                 <>
                   <h3>Highlights</h3>
-                  <p className="muted">{highlightIntro}</p>
+                  <p className="muted">Memorable achievements, signature projects or press that tell my story in one glance.</p>
                   <div style={{ marginTop: 12 }}>
                     <img src={photos[0] || "https://picsum.photos/id/1031/1200/800"} alt="highlights hero" style={{ width: "100%", borderRadius: 12, objectFit: "cover" }} />
                   </div>
@@ -292,7 +429,7 @@ export default function NormalPreview({ data, showFooter = true }: { data?: Norm
               ) : null}
             </section>
 
-            <section id="contact" className="panel" role="tabpanel" style={{ display: tab === "contact" ? "block" : "none" }}>
+            <section id="contact" className="panel" style={{ display: tab === "contact" ? "block" : "none" }}>
               <h3>Contact</h3>
               <p className="muted"><strong>Phone:</strong> {phone ? <a id="phoneLink" href={`tel:${phone}`} style={{ color: "var(--text-light)", textDecoration: "none" }}>{phone}</a> : "—"}</p>
               <p className="muted"><strong>Email:</strong> {email ? <a id="emailLink" href={`mailto:${email}`} style={{ color: "var(--text-light)", textDecoration: "none" }}>{email}</a> : "—"}</p>
@@ -303,18 +440,19 @@ export default function NormalPreview({ data, showFooter = true }: { data?: Norm
                 </div>
               ) : null}
 
-              <div style={{ marginTop: 12 }}>
-                <img id="qr" src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(profileUrl || clientHref)}`} alt="QR code" style={{ width: 120, height: 120, borderRadius: 10, background: "white", padding: 8 }} />
-                <small className="muted" style={{ display: "block", marginTop: 8 }}>Scan to view my profile</small>
+              <div className="contact-qr-row">
+                <div>
+                  <img id="qr" src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(profileUrl || clientHref)}`} alt="QR code" style={{ width: 120, height: 120, borderRadius: 10, background: "white", padding: 8 }} />
+                  <small className="muted" style={{ display: "block", marginTop: 8 }}>Scan to view my profile</small>
+                </div>
+
+                <div>
+                  <button onClick={shareProfile} className="btn ghost" style={{ padding: "8px 12px" }}>Share NexProfile</button>
+                </div>
               </div>
             </section>
           </main>
         </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 18, maxWidth: 980, marginLeft: "auto", marginRight: "auto" }}>
-        <button onClick={() => router.push("/templates-preview")} className="btn ghost" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.06)" }}>Back</button>
-        {showFooter ? <button onClick={() => router.push("/onboarding/normal")} className="btn" style={{ padding: "8px 12px", borderRadius: 12, background: "linear-gradient(90deg,var(--accent),var(--accent-2))", color: "#06101a" }}>Use this template</button> : null}
       </div>
 
       {lightbox ? (

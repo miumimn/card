@@ -4,8 +4,8 @@ import OnboardingForm from "@/components/OnboardingForm";
 
 /**
  * Onboarding fields for the 'Normal' business card template.
- * - Removed heroImage (no cover photo upload)
- * - Added follow_link so the Follow button opens the chosen social/profile.
+ * - Added Snapchat and TikTok fields.
+ * - Follow link remains for preferred follow destination.
  */
 export default function Page() {
   const questions = [
@@ -23,6 +23,8 @@ export default function Page() {
     { name: "twitter", label: "Twitter (handle or URL)", type: "text", placeholder: "@handle or https://twitter.com/handle" },
     { name: "facebook", label: "Facebook (profile or page URL)", type: "text", placeholder: "https://facebook.com/yourpage" },
     { name: "linkedin", label: "LinkedIn (handle or URL)", type: "text", placeholder: "https://linkedin.com/in/handle" },
+    { name: "tiktok", label: "TikTok (handle or URL)", type: "text", placeholder: "@handle or https://tiktok.com/@handle" },
+    { name: "snapchat", label: "Snapchat (handle)", type: "text", placeholder: "@handle or handle" },
     { name: "website", label: "Website", type: "url", placeholder: "https://your-site.com" },
 
     { name: "follow_link", label: "Follow link (URL or handle)", type: "text", placeholder: "Preferred link to open when Follow tapped (e.g. Instagram URL or profile URL)" },
