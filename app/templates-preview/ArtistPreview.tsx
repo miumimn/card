@@ -4,26 +4,15 @@ import { useRouter } from "next/navigation";
 import SvgIcon from "@/components/Icon"; // centralized SVG loader (public/svg/<name>.svg)
 
 /**
- * ArtistPreview
+ * ArtistPreview (updated socials behavior)
  *
- * - Restored styles + shop tab + lightbox.
- * - Works and shop product images open the same accessible lightbox.
- * - Socials shown using the centralized SvgIcon component (loads from public/svg).
- * - Bio moved into About tab only.
- * - Contacts tab shows email (mailto) and phone (tel). Social icons and contact icons are clickable.
- * - Product title/price link to contact action (contact_url > profile_url > mailto).
+ * Key changes:
+ * - Mobile socials are smaller (48px) and left-aligned, scrollable with padding so icons aren't clipped.
+ * - Desktop inline social-row is horizontally scrollable with padding to avoid corner clipping.
+ * - Scrollbars are thin and unobtrusive; touch scrolling enabled.
+ * - Share button remains visible below socials.
  *
- * Mobile-first: avatar left, name/title centered; mobile-only socials row appears beneath the hero-top (scrollable).
- * Desktop: original inline social-row remains to the right in the meta (unchanged).
- *
- * Behavior: mobile socials row auto-scrolls to the end on mount so user can swipe left to reveal earlier icons.
- *
- * Update: added "Share NexProfile" button underneath the horizontal socials (both desktop and mobile),
- * placed between the hero socials and the tabs as requested. The button shares the profile preview URL
- * (prefers merged.profile_url, falls back to a preview route using merged.id/slug, then current href).
- *
- * Change: desktop inline social-row is horizontally scrollable when there are many icons.
- * Also: share button is shown regardless of whether socials exist, so users can always share their profile.
+ * All other behavior (lightbox, tabs, share link) preserved.
  */
 
 export default function ArtistPreview({ data, showFooter = true }: { data?: any; showFooter?: boolean }) {
@@ -331,23 +320,26 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
           overflow-y:hidden;
           white-space:nowrap;
           -webkit-overflow-scrolling: touch;
+
+          /* padding so first/last icons aren't cut off on small screens */
+          padding: 4px 10px;
         }
         .social-row > * { flex: 0 0 auto; } /* prevent wrapping/shrinking so horizontal scroll works */
         .social{
-          width:44px;
-          height:44px;
+          width:40px;
+          height:40px;
           border-radius:50%;
           display:inline-flex;
           align-items:center;
           justify-content:center;
           background:linear-gradient(180deg, rgba(212,175,55,0.06), rgba(212,175,55,0.02));
           color:inherit;
-          border:1.6px solid var(--gold); /* thinner golden circle */
-          box-shadow: 0 6px 18px rgba(212,175,55,0.12);
+          border:1.2px solid var(--gold);
+          box-shadow: 0 6px 12px rgba(212,175,55,0.08);
           padding:0;
           margin-right: 6px;
         }
-        .social img, .social svg{ width:20px; height:20px; display:block; }
+        .social img, .social svg{ width:18px; height:18px; display:block; }
 
         /* hide scrollbar visually but keep functional */
         .social-row::-webkit-scrollbar { height:6px; }
@@ -355,9 +347,36 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
         .social-row { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent; }
 
         /* Mobile-only socials strip (bigger, scrollable) */
-        .socials-mobile { display:flex; gap:12px; margin-top:12px; align-items:center; overflow-x:auto; padding:6px 4px; -webkit-overflow-scrolling:touch; justify-content:center; }
-        .social-mobile { flex:0 0 auto; width:56px; height:56px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; border:1.6px solid var(--gold); /* thinner golden circle */ box-shadow: 0 6px 14px rgba(212,175,55,0.08); background: transparent; }
-        .social-mobile img, .social-mobile svg { width:30px; height:30px; display:block; }
+        .socials-mobile {
+          display:flex;
+          gap:10px;
+          margin-top:12px;
+          align-items:center;
+          overflow-x:auto;
+          padding:8px 12px;               /* ensure spacing so icons not clipped at edges */
+          -webkit-overflow-scrolling:touch;
+          justify-content:flex-start;     /* left-aligned for easier swipe */
+          scroll-padding-left: 12px;
+          scroll-padding-right: 12px;
+        }
+        .social-mobile { flex:0 0 auto; width:48px; height:48px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; border:1.2px solid var(--gold); box-shadow: 0 6px 12px rgba(212,175,55,0.08); background: transparent; }
+        .social-mobile img, .social-mobile svg { width:22px; height:22px; display:block; }
+
+        /* small "fade hint" at right edge for overflow hints (optional) */
+        .socials-mobile::after, .social-row::after {
+          content: "";
+          position: absolute;
+          pointer-events: none;
+          right: 8px;
+          top: 0;
+          bottom: 0;
+          width: 36px;
+          background: linear-gradient(90deg, rgba(7,6,8,0), rgba(7,6,8,0.35));
+          display: none;
+        }
+        /* show fade hint when overflow exists via CSS only is limited; you can enable always on mobile if you want:
+           @media (max-width:880px) { .socials-mobile::after { display:block; } }
+        */
 
         /* SHARE row styles */
         .share-row { display:flex; justify-content:center; margin-top:12px; }
@@ -406,6 +425,7 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                   {Object.entries(socialsData).map(([k, v]) => {
                     if (!v) return null;
                     const href = socialHref(k, v);
+                    // For mailto/tel we don't want target="_blank"
                     const isExternal = !(k === "email" || k === "phone");
                     return (
                       <a
@@ -439,7 +459,7 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                     rel={isExternal ? "noreferrer" : undefined}
                     aria-label={k}
                   >
-                    <SvgIcon name={k} alt={k} width={30} height={30} useImg />
+                    <SvgIcon name={k} alt={k} width={22} height={22} useImg />
                   </a>
                 );
               })}
