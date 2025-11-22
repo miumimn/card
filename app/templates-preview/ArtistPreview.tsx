@@ -17,6 +17,13 @@ import SvgIcon from "@/components/Icon"; // centralized SVG loader (public/svg/<
  * Desktop: original inline social-row remains to the right in the meta (unchanged).
  *
  * Behavior: mobile socials row auto-scrolls to the end on mount so user can swipe left to reveal earlier icons.
+ *
+ * Update: added "Share NexProfile" button underneath the horizontal socials (both desktop and mobile),
+ * placed between the hero socials and the tabs as requested. The button shares the profile preview URL
+ * (prefers merged.profile_url, falls back to a preview route using merged.id/slug, then current href).
+ *
+ * Change: desktop inline social-row is horizontally scrollable when there are many icons.
+ * Also: share button is shown regardless of whether socials exist, so users can always share their profile.
  */
 
 export default function ArtistPreview({ data, showFooter = true }: { data?: any; showFooter?: boolean }) {
@@ -259,6 +266,43 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
     ? (lightboxState.kind === "works" ? worksToShow[lightboxState.index] : shopToShow[lightboxState.index]?.image || "")
     : null;
 
+  // share button logic: prefer explicit profile_url, else preview route with id/slug, else current href
+  const [clientHref, setClientHref] = useState<string>("");
+  useEffect(() => {
+    try { setClientHref(window.location.href || ""); } catch { setClientHref(""); }
+  }, []);
+
+  const getShareUrl = (): string => {
+    if (merged.profile_url) return merged.profile_url;
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const idPart = merged.id ?? merged.slug ?? merged._id ?? "";
+      if (idPart) return `${origin}/profile-preview/artist?id=${encodeURIComponent(String(idPart))}`;
+    } catch {}
+    return clientHref || (typeof window !== "undefined" ? window.location.href : "");
+  };
+
+  const shareProfile = async () => {
+    const url = getShareUrl();
+    const shareData = { title: `${name} — NexProfile`, text: `Check out ${name} on NexProfile`, url };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else if (navigator.clipboard) { await navigator.clipboard.writeText(url); alert("Profile link copied to clipboard"); }
+      else {
+        const tmp = document.createElement("input");
+        document.body.appendChild(tmp);
+        tmp.value = url;
+        tmp.select();
+        document.execCommand("copy");
+        tmp.remove();
+        alert("Profile link copied to clipboard");
+      }
+    } catch (err) {
+      alert("Could not share profile. Copied link to clipboard as fallback.");
+      try { await navigator.clipboard.writeText(url); } catch {}
+    }
+  };
+
   return (
     <>
       <link rel="stylesheet" href="/assets/styles.css" />
@@ -276,7 +320,19 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
         .role{ margin:0; color:var(--a-muted); font-weight:700; font-size:13px; }
 
         /* Desktop: meta right of avatar and original inline social row visible */
-        .social-row{ display:none; gap:8px; margin-top:8px; align-items:center; }
+        .social-row{
+          display:none;
+          gap:8px;
+          margin-top:8px;
+          align-items:center;
+
+          /* make horizontal scrollable when many icons */
+          overflow-x:auto;
+          overflow-y:hidden;
+          white-space:nowrap;
+          -webkit-overflow-scrolling: touch;
+        }
+        .social-row > * { flex: 0 0 auto; } /* prevent wrapping/shrinking so horizontal scroll works */
         .social{
           width:44px;
           height:44px;
@@ -289,13 +345,24 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
           border:1.6px solid var(--gold); /* thinner golden circle */
           box-shadow: 0 6px 18px rgba(212,175,55,0.12);
           padding:0;
+          margin-right: 6px;
         }
         .social img, .social svg{ width:20px; height:20px; display:block; }
+
+        /* hide scrollbar visually but keep functional */
+        .social-row::-webkit-scrollbar { height:6px; }
+        .social-row::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 99px; }
+        .social-row { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent; }
 
         /* Mobile-only socials strip (bigger, scrollable) */
         .socials-mobile { display:flex; gap:12px; margin-top:12px; align-items:center; overflow-x:auto; padding:6px 4px; -webkit-overflow-scrolling:touch; justify-content:center; }
         .social-mobile { flex:0 0 auto; width:56px; height:56px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; border:1.6px solid var(--gold); /* thinner golden circle */ box-shadow: 0 6px 14px rgba(212,175,55,0.08); background: transparent; }
         .social-mobile img, .social-mobile svg { width:30px; height:30px; display:block; }
+
+        /* SHARE row styles */
+        .share-row { display:flex; justify-content:center; margin-top:12px; }
+        .share-btn { padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); color: var(--a-text); cursor:pointer; font-weight:800; display:inline-flex; gap:8px; align-items:center; }
+        .share-btn:hover { box-shadow: 0 8px 28px rgba(255,107,203,0.06); transform: translateY(-2px); }
 
         .hero-card{ margin-top:12px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.02); color:var(--a-muted); backdrop-filter: blur(4px); }
         .tabs{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; } .tab{ padding:8px 12px; border-radius:10px; background:transparent; border:1px solid rgba(255,255,255,0.03); color:var(--a-muted); font-weight:800; cursor:pointer; } .tab.active{ background: linear-gradient(90deg,var(--a-accent), rgba(255,107,203,0.08)); color:#14020a; border:none; box-shadow:0 8px 24px rgba(176,108,255,0.06); }
@@ -310,6 +377,7 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
           .socials-mobile{ display:none; }
           .meta{ text-align:left; align-items:flex-start; }
           .avatar{ width:110px; height:110px; }
+          .share-row { justify-content:flex-start; margin-left: 8px; }
         }
 
         .preview-footer{ display:flex; gap:10px; justify-content:flex-end; margin:18px 0 32px; flex-wrap:wrap; } .secondary-btn{ padding:10px 14px; border-radius:10px; background:transparent; color:var(--a-muted); border:1px solid rgba(255,255,255,0.06); cursor:pointer; font-weight:700; }
@@ -333,54 +401,67 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                 {name ? <h1 className="name">{name}</h1> : null}
                 {role ? <div className="role">{role}</div> : null}
 
-                {/* Desktop inline socials (unchanged) */}
-                {Object.values(socialsData).some(Boolean) ? (
-                  <nav className="social-row" aria-label="social links">
-                    {Object.entries(socialsData).map(([k, v]) => {
-                      if (!v) return null;
-                      const href = socialHref(k, v);
-                      // For mailto/tel we don't want target="_blank"
-                      const isExternal = !(k === "email" || k === "phone");
-                      return (
-                        <a
-                          key={k}
-                          className="social"
-                          href={href}
-                          target={isExternal ? "_blank" : undefined}
-                          rel={isExternal ? "noreferrer" : undefined}
-                          aria-label={k}
-                        >
-                          <SvgIcon name={k} alt={k} width={20} height={20} useImg />
-                        </a>
-                      );
-                    })}
-                  </nav>
-                ) : null}
+                {/* Desktop inline socials (scrollable when many) */}
+                <nav className="social-row" aria-label="social links">
+                  {Object.entries(socialsData).map(([k, v]) => {
+                    if (!v) return null;
+                    const href = socialHref(k, v);
+                    const isExternal = !(k === "email" || k === "phone");
+                    return (
+                      <a
+                        key={k}
+                        className="social"
+                        href={href}
+                        target={isExternal ? "_blank" : undefined}
+                        rel={isExternal ? "noreferrer" : undefined}
+                        aria-label={k}
+                      >
+                        <SvgIcon name={k} alt={k} width={20} height={20} useImg />
+                      </a>
+                    );
+                  })}
+                </nav>
               </div>
             </div>
 
             {/* Mobile-only socials row: larger icons, scrollable - now with ref to auto-scroll to end */}
-            {Object.values(socialsData).some(Boolean) ? (
-              <div ref={socialsMobileRef} className="socials-mobile" aria-hidden={false} aria-label="social links (mobile)">
-                {Object.entries(socialsData).map(([k, v]) => {
-                  if (!v) return null;
-                  const href = socialHref(k, v);
-                  const isExternal = !(k === "email" || k === "phone");
-                  return (
-                    <a
-                      key={k}
-                      className="social-mobile"
-                      href={href}
-                      target={isExternal ? "_blank" : undefined}
-                      rel={isExternal ? "noreferrer" : undefined}
-                      aria-label={k}
-                    >
-                      <SvgIcon name={k} alt={k} width={30} height={30} useImg />
-                    </a>
-                  );
-                })}
-              </div>
-            ) : null}
+            <div ref={socialsMobileRef} className="socials-mobile" aria-hidden={false} aria-label="social links (mobile)">
+              {Object.entries(socialsData).map(([k, v]) => {
+                if (!v) return null;
+                const href = socialHref(k, v);
+                const isExternal = !(k === "email" || k === "phone");
+                return (
+                  <a
+                    key={k}
+                    className="social-mobile"
+                    href={href}
+                    target={isExternal ? "_blank" : undefined}
+                    rel={isExternal ? "noreferrer" : undefined}
+                    aria-label={k}
+                  >
+                    <SvgIcon name={k} alt={k} width={30} height={30} useImg />
+                  </a>
+                );
+              })}
+            </div>
+
+            {/* Share button: shown regardless of whether socials exist so user can always share profile */}
+            <div className="share-row" role="region" aria-label="Share profile">
+              <button
+                className="share-btn"
+                onClick={(e) => { e.stopPropagation(); shareProfile(); }}
+                aria-label="Share NexProfile"
+                title="Share NexProfile"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden style={{ display: "inline-block" }}>
+                  <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16 6l-4-4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 2v13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Share NexProfile
+              </button>
+            </div>
+
             {/* About removed from hero: about will only show under the About tab */}
           </section>
 

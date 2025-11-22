@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import TemplateLoader from "./components/TemplateLoader";
 
 /**
  * Template selector / gallery (mobile-first)
@@ -129,6 +130,9 @@ export default function TemplateSelector() {
 
   return (
     <main className="min-h-screen bg-gray-50 p-4 sm:p-8">
+      {/* Loader overlay for the templates page */}
+      <TemplateLoader />
+
       <div className="max-w-6xl mx-auto">
         {/* Header / Search */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">

@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import "./styles.css";
 import RotatingCard from "./components/RotatingCard";
+import StoreClientShell from "./components/StoreClientShell";
 
 /**
  * Store landing (Server Component)
@@ -10,8 +11,6 @@ import RotatingCard from "./components/RotatingCard";
  *
  * NOTE: ShopClient is a client component (wraps the real Shop client component).
  */
-
-import ShopClient from "./components/ShopClient";
 
 export default function StorePage() {
   return (
@@ -37,7 +36,9 @@ export default function StorePage() {
 
       <main className="store-container">
         <section className="product-area">
-          <ShopClient />
+          {/* StoreClientShell will show the loader animation while the page loads,
+              then render the actual ShopClient once ready. */}
+          <StoreClientShell />
         </section>
 
         <section className="info-area" style={{ marginTop: 22 }}>
