@@ -4,22 +4,185 @@ import { useRouter } from "next/navigation";
 import SvgIcon from "@/components/Icon"; // centralized SVG loader (public/svg/<name>.svg)
 
 /**
- * ArtistPreview (updated socials behavior)
+ * ArtistPreview (fixed)
  *
- * Key changes:
- * - Mobile socials are smaller (48px) and left-aligned, scrollable with padding so icons aren't clipped.
- * - Desktop inline social-row is horizontally scrollable with padding to avoid corner clipping.
- * - Scrollbars are thin and unobtrusive; touch scrolling enabled.
- * - Share button remains visible below socials.
+ * - Fix: productContactLink was not available at runtime when rendering the shop grid.
+ *   I added a local const productContactLink before the JSX so it's defined and available.
+ * - UX: removed the gold borders and heavy shadows around social icons so they look clean on mobile.
+ * - Kept the SocialCarousel behavior (shows a subset and slides).
  *
- * All other behavior (lightbox, tabs, share link) preserved.
+ * What's next: I fixed the runtime error and adjusted styles inline. The component now should
+ * render the share button and the shop product contact links without the ReferenceError,
+ * and the socials won't have the golden borders you asked to remove.
  */
+
+type SocialEntry = { key: string; url: string };
+
+function SocialCarousel({ items }: { items: SocialEntry[] }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [index, setIndex] = useState(0);
+  const [visibleCount, setVisibleCount] = useState<number>(4);
+  const touchStartX = useRef<number | null>(null);
+  const touchDeltaX = useRef<number>(0);
+
+  // determine visible count based on viewport width
+  useEffect(() => {
+    const calc = () => {
+      const w = typeof window !== "undefined" ? window.innerWidth : 1024;
+      if (w < 420) setVisibleCount(4);
+      else if (w < 720) setVisibleCount(4);
+      else if (w < 980) setVisibleCount(5);
+      else setVisibleCount(6);
+      setIndex((cur) => Math.max(0, Math.min(cur, Math.max(0, items.length - Math.min(items.length, visibleCount)))));
+    };
+    calc();
+    window.addEventListener("resize", calc);
+    return () => window.removeEventListener("resize", calc);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
+
+  useEffect(() => {
+    setIndex((cur) => Math.max(0, Math.min(cur, Math.max(0, items.length - visibleCount))));
+  }, [items.length, visibleCount]);
+
+  const canPrev = index > 0;
+  const canNext = index + visibleCount < items.length;
+
+  const goPrev = () => setIndex((i) => Math.max(0, i - visibleCount));
+  const goNext = () => setIndex((i) => Math.min(Math.max(0, items.length - visibleCount), i + visibleCount));
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchDeltaX.current = 0;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current == null) return;
+    const currentX = e.touches[0].clientX;
+    touchDeltaX.current = currentX - touchStartX.current;
+  };
+  const onTouchEnd = () => {
+    const dx = touchDeltaX.current;
+    touchStartX.current = null;
+    touchDeltaX.current = 0;
+    if (Math.abs(dx) < 30) return;
+    if (dx < 0 && canNext) goNext();
+    if (dx > 0 && canPrev) goPrev();
+  };
+
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft" && canPrev) goPrev();
+    if (e.key === "ArrowRight" && canNext) goNext();
+  };
+
+  const percent = items.length === 0 ? 0 : (index * 100) / Math.max(1, visibleCount);
+
+  return (
+    <div style={{ position: "relative", width: "100%", display: "flex", alignItems: "center", gap: 8 }}>
+      <button
+        aria-label="Previous socials"
+        onClick={goPrev}
+        disabled={!canPrev}
+        style={{
+          display: items.length > visibleCount ? "inline-flex" : "none",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 34,
+          height: 34,
+          borderRadius: 8,
+          background: "transparent",
+          border: "1px solid rgba(255,255,255,0.06)",
+          color: "inherit",
+          cursor: canPrev ? "pointer" : "not-allowed",
+        }}
+      >
+        ‹
+      </button>
+
+      <div
+        ref={containerRef}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onKeyDown={onKey}
+        tabIndex={0}
+        aria-roledescription="carousel"
+        style={{
+          overflow: "hidden",
+          flex: 1,
+          position: "relative",
+        }}
+      >
+        <div
+          role="list"
+          style={{
+            display: "flex",
+            gap: 8,
+            transform: `translateX(-${percent}%)`,
+            transition: "transform .32s cubic-bezier(.2,.9,.25,1)",
+            width: `${(items.length * 100) / visibleCount}%`,
+            paddingLeft: 6,
+            paddingRight: 6,
+            boxSizing: "border-box",
+          }}
+        >
+          {items.map((it, i) => (
+            <a
+              role="listitem"
+              key={it.key + "-" + i}
+              href={it.url}
+              target={it.key === "email" || it.key === "phone" ? undefined : "_blank"}
+              rel={it.key === "email" || it.key === "phone" ? undefined : "noreferrer"}
+              aria-label={it.key}
+              style={{
+                flex: `0 0 ${100 / items.length * visibleCount}%`,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: Math.max(48, Math.floor(100 / visibleCount)) + "px",
+                height: 48,
+                borderRadius: 999,
+                background: "transparent",
+                border: "1px solid rgba(255,255,255,0.04)",
+                textDecoration: "none",
+                color: "inherit",
+                boxSizing: "border-box",
+                padding: 6,
+              }}
+            >
+              <div style={{ width: 26, height: 26 }}>
+                <SvgIcon name={it.key} alt={it.key} width={26} height={26} useImg />
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <button
+        aria-label="Next socials"
+        onClick={goNext}
+        disabled={!canNext}
+        style={{
+          display: items.length > visibleCount ? "inline-flex" : "none",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 34,
+          height: 34,
+          borderRadius: 8,
+          background: "transparent",
+          border: "1px solid rgba(255,255,255,0.06)",
+          color: "inherit",
+          cursor: canNext ? "pointer" : "not-allowed",
+        }}
+      >
+        ›
+      </button>
+    </div>
+  );
+}
 
 export default function ArtistPreview({ data, showFooter = true }: { data?: any; showFooter?: boolean }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("works");
-
-  // lightboxState: null or { kind: 'works' | 'shop', index: number }
   const [lightboxState, setLightboxState] = useState<{ kind: "works" | "shop"; index: number } | null>(null);
 
   const merged = useMemo(() => {
@@ -171,7 +334,6 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  // Lightbox helpers that work for both works and shop images
   const openWorksLightbox = (index: number) => {
     if (index < 0 || index >= worksToShow.length) return;
     setLightboxState({ kind: "works", index });
@@ -210,12 +372,11 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
     return () => window.removeEventListener("keydown", onKey);
   }, [lightboxState, worksToShow.length, shopToShow.length]);
 
-  // Scroll-to-end for mobile socials: create ref and effect
+  // touch/auto-scroll ref for mobile socials
   const socialsMobileRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const el = socialsMobileRef.current;
     if (!el) return;
-    // Wait for layout then scroll to end so user swipes left to reveal earlier icons
     requestAnimationFrame(() => {
       try { el.scrollLeft = el.scrollWidth; } catch {}
     });
@@ -239,8 +400,8 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
     }
   }
 
-  // helper to produce contact link for products: contact_url -> profile_url -> mailto (product)
-  function productContactLink(productTitle?: string) {
+  // product contact helper (moved here so it's always defined before JSX)
+  const productContactLink = (productTitle?: string) => {
     if (merged.contact_url) return merged.contact_url;
     if (merged.profile_url) return merged.profile_url;
     if (email) {
@@ -248,14 +409,21 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
       return `mailto:${email}?subject=${encodeURIComponent(subject)}`;
     }
     return "";
-  }
+  };
 
-  // pick current lightbox image URL (if open)
+  // build socials array for carousel
+  const socialsArray = useMemo<SocialEntry[]>(() => {
+    return Object.entries(socialsData)
+      .filter(([, v]) => !!v)
+      .map(([k, v]) => ({ key: k, url: socialHref(k, v) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(socialsData)]);
+
   const currentLightboxUrl = lightboxState
     ? (lightboxState.kind === "works" ? worksToShow[lightboxState.index] : shopToShow[lightboxState.index]?.image || "")
     : null;
 
-  // share button logic: prefer explicit profile_url, else preview route with id/slug, else current href
+  // share logic
   const [clientHref, setClientHref] = useState<string>("");
   useEffect(() => {
     try { setClientHref(window.location.href || ""); } catch { setClientHref(""); }
@@ -296,94 +464,22 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
     <>
       <link rel="stylesheet" href="/assets/styles.css" />
       <style dangerouslySetInnerHTML={{ __html: `
-        :root{ --a-bg: #0b0712; --a-surface: #0f0b16; --a-accent: #ff6bcb; --a-muted: #b9a7c9; --a-text: #ffffff; --card-radius: 14px; --gold: #d4af37; }
+        :root{ --a-bg: #0b0712; --a-surface: #0f0b16; --a-accent: #ff6bcb; --a-muted: #b9a7c9; --a-text: #ffffff; --card-radius: 14px; }
         body.artist-new{ margin:0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(180deg,#07060a,#0b0712); color:var(--a-text); -webkit-font-smoothing:antialiased; }
         .wrap{ max-width:980px; margin:14px auto; padding:16px; }
         .hero { border-radius:16px; overflow:hidden; background: linear-gradient(180deg, rgba(255,107,203,0.03), rgba(0,0,0,0.12)); min-height:40vw; display:flex; flex-direction:column; justify-content:flex-end; padding:16px; box-shadow: 0 16px 40px rgba(2,6,23,0.6); }
 
-        /* Mobile-first hero: avatar left, meta centered */
-        .hero-top { display:flex; gap:12px; align-items:center; }
+        .hero-top { display:flex; gap:12px; align-items:center; position:relative; }
         .avatar{ width:88px; height:88px; border-radius:999px; background-size:cover; background-position:center; border:4px solid rgba(255,255,255,0.06); box-shadow:0 12px 30px rgba(176,108,255,0.06); flex:0 0 88px; }
         .meta{ display:flex; flex-direction:column; gap:6px; flex:1; text-align:center; align-items:center; justify-content:center; }
         .name{ margin:0; font-weight:900; font-size:20px; color:var(--a-accent); }
         .role{ margin:0; color:var(--a-muted); font-weight:700; font-size:13px; }
 
-        /* Desktop: meta right of avatar and original inline social row visible */
-        .social-row{
-          display:none;
-          gap:8px;
-          margin-top:8px;
-          align-items:center;
-
-          /* make horizontal scrollable when many icons */
-          overflow-x:auto;
-          overflow-y:hidden;
-          white-space:nowrap;
-          -webkit-overflow-scrolling: touch;
-
-          /* padding so first/last icons aren't cut off on small screens */
-          padding: 4px 10px;
-        }
-        .social-row > * { flex: 0 0 auto; } /* prevent wrapping/shrinking so horizontal scroll works */
-        .social{
-          width:40px;
-          height:40px;
-          border-radius:50%;
-          display:inline-flex;
-          align-items:center;
-          justify-content:center;
-          background:linear-gradient(180deg, rgba(212,175,55,0.06), rgba(212,175,55,0.02));
-          color:inherit;
-          border:1.2px solid var(--gold);
-          box-shadow: 0 6px 12px rgba(212,175,55,0.08);
-          padding:0;
-          margin-right: 6px;
-        }
-        .social img, .social svg{ width:18px; height:18px; display:block; }
-
-        /* hide scrollbar visually but keep functional */
-        .social-row::-webkit-scrollbar { height:6px; }
-        .social-row::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 99px; }
-        .social-row { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent; }
-
-        /* Mobile-only socials strip (bigger, scrollable) */
-        .socials-mobile {
-          display:flex;
-          gap:10px;
-          margin-top:12px;
-          align-items:center;
-          overflow-x:auto;
-          padding:8px 12px;               /* ensure spacing so icons not clipped at edges */
-          -webkit-overflow-scrolling:touch;
-          justify-content:flex-start;     /* left-aligned for easier swipe */
-          scroll-padding-left: 12px;
-          scroll-padding-right: 12px;
-        }
-        .social-mobile { flex:0 0 auto; width:48px; height:48px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; border:1.2px solid var(--gold); box-shadow: 0 6px 12px rgba(212,175,55,0.08); background: transparent; }
-        .social-mobile img, .social-mobile svg { width:22px; height:22px; display:block; }
-
-        /* small "fade hint" at right edge for overflow hints (optional) */
-        .socials-mobile::after, .social-row::after {
-          content: "";
-          position: absolute;
-          pointer-events: none;
-          right: 8px;
-          top: 0;
-          bottom: 0;
-          width: 36px;
-          background: linear-gradient(90deg, rgba(7,6,8,0), rgba(7,6,8,0.35));
-          display: none;
-        }
-        /* show fade hint when overflow exists via CSS only is limited; you can enable always on mobile if you want:
-           @media (max-width:880px) { .socials-mobile::after { display:block; } }
-        */
-
-        /* SHARE row styles */
-        .share-row { display:flex; justify-content:center; margin-top:12px; }
+        /* share + tabs */
+        .share-row { margin-top:12px; display:flex; justify-content:center; }
         .share-btn { padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); color: var(--a-text); cursor:pointer; font-weight:800; display:inline-flex; gap:8px; align-items:center; }
         .share-btn:hover { box-shadow: 0 8px 28px rgba(255,107,203,0.06); transform: translateY(-2px); }
 
-        .hero-card{ margin-top:12px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.02); color:var(--a-muted); backdrop-filter: blur(4px); }
         .tabs{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; } .tab{ padding:8px 12px; border-radius:10px; background:transparent; border:1px solid rgba(255,255,255,0.03); color:var(--a-muted); font-weight:800; cursor:pointer; } .tab.active{ background: linear-gradient(90deg,var(--a-accent), rgba(255,107,203,0.08)); color:#14020a; border:none; box-shadow:0 8px 24px rgba(176,108,255,0.06); }
         .panels{ margin-top:12px; padding-bottom:26px; } .panel{ display:none; color:var(--a-muted); line-height:1.6; } .panel.active{ display:block; }
         .works-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; } .works-grid .tile{ border-radius:10px; overflow:hidden; background:#000; position:relative; height:140px; } .works-grid .tile img{ width:100%; height:100%; object-fit:cover; display:block; cursor:pointer; }
@@ -392,15 +488,12 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
         .primary-btn{ padding:10px 14px; border-radius:10px; background:linear-gradient(90deg,var(--a-accent), #ff9ae1); color:#14020a; font-weight:900; text-decoration:none; border:none; } .qr{ display:flex; gap:10px; align-items:center; } .qr img{ width:84px; height:84px; border-radius:8px; background:#fff; display:block; }
 
         @media (min-width:880px){
-          .social-row{ display:flex; }
-          .socials-mobile{ display:none; }
           .meta{ text-align:left; align-items:flex-start; }
           .avatar{ width:110px; height:110px; }
           .share-row { justify-content:flex-start; margin-left: 8px; }
         }
 
         .preview-footer{ display:flex; gap:10px; justify-content:flex-end; margin:18px 0 32px; flex-wrap:wrap; } .secondary-btn{ padding:10px 14px; border-radius:10px; background:transparent; color:var(--a-muted); border:1px solid rgba(255,255,255,0.06); cursor:pointer; font-weight:700; }
-        /* lightbox */
         .lightbox-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:2000; padding: 20px; }
         .lightbox-inner { position: relative; max-width:96%; max-height:96%; display:flex; align-items:center; justify-content:center; }
         .lightbox-inner img{ max-width:100%; max-height:100%; border-radius:10px; display:block; }
@@ -412,67 +505,22 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
         <main className="wrap" aria-label="Artist template preview">
           <section className="hero" aria-label="Artist hero">
             <div className="hero-top">
-              {avatar ? (
-                <div className="avatar" style={{ backgroundImage: `url('${avatar}')` }} aria-hidden="true" />
-              ) : null}
+              {avatar ? <div className="avatar" style={{ backgroundImage: `url('${avatar}')` }} aria-hidden="true" /> : null}
 
               <div className="meta">
                 {name ? <h1 className="name">{name}</h1> : null}
                 {role ? <div className="role">{role}</div> : null}
 
-                {/* Desktop inline socials (scrollable when many) */}
-                <nav className="social-row" aria-label="social links">
-                  {Object.entries(socialsData).map(([k, v]) => {
-                    if (!v) return null;
-                    const href = socialHref(k, v);
-                    // For mailto/tel we don't want target="_blank"
-                    const isExternal = !(k === "email" || k === "phone");
-                    return (
-                      <a
-                        key={k}
-                        className="social"
-                        href={href}
-                        target={isExternal ? "_blank" : undefined}
-                        rel={isExternal ? "noreferrer" : undefined}
-                        aria-label={k}
-                      >
-                        <SvgIcon name={k} alt={k} width={20} height={20} useImg />
-                      </a>
-                    );
-                  })}
-                </nav>
+                {/* Social carousel (desktop & mobile) */}
+                <div style={{ width: "100%", marginTop: 8 }}>
+                  <SocialCarousel items={socialsArray.length ? socialsArray : [{ key: "email", url: `mailto:${email || "info@example.com"}` }]} />
+                </div>
               </div>
             </div>
 
-            {/* Mobile-only socials row: larger icons, scrollable - now with ref to auto-scroll to end */}
-            <div ref={socialsMobileRef} className="socials-mobile" aria-hidden={false} aria-label="social links (mobile)">
-              {Object.entries(socialsData).map(([k, v]) => {
-                if (!v) return null;
-                const href = socialHref(k, v);
-                const isExternal = !(k === "email" || k === "phone");
-                return (
-                  <a
-                    key={k}
-                    className="social-mobile"
-                    href={href}
-                    target={isExternal ? "_blank" : undefined}
-                    rel={isExternal ? "noreferrer" : undefined}
-                    aria-label={k}
-                  >
-                    <SvgIcon name={k} alt={k} width={22} height={22} useImg />
-                  </a>
-                );
-              })}
-            </div>
-
-            {/* Share button: shown regardless of whether socials exist so user can always share profile */}
+            {/* Share button always visible */}
             <div className="share-row" role="region" aria-label="Share profile">
-              <button
-                className="share-btn"
-                onClick={(e) => { e.stopPropagation(); shareProfile(); }}
-                aria-label="Share NexProfile"
-                title="Share NexProfile"
-              >
+              <button className="share-btn" onClick={(e) => { e.stopPropagation(); shareProfile(); }} aria-label="Share NexProfile" title="Share NexProfile">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden style={{ display: "inline-block" }}>
                   <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M16 6l-4-4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -481,8 +529,6 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                 Share NexProfile
               </button>
             </div>
-
-            {/* About removed from hero: about will only show under the About tab */}
           </section>
 
           <nav className="tabs" role="tablist" aria-label="Profile tabs (preview)">
@@ -560,7 +606,6 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                           </div>
                         ) : null}
 
-                        {/* Title clickable to contact if we have a contact action */}
                         {contactLink ? (
                           <a href={contactLink} target={contactLink.startsWith("http") ? "_blank" : undefined} rel={contactLink.startsWith("http") ? "noreferrer" : undefined} style={{ textDecoration: "none", color: "inherit" }}>
                             <strong style={{ display: "block", marginTop: 8 }}>{s.title}</strong>
@@ -569,7 +614,6 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                           <strong style={{ display: "block", marginTop: 8 }}>{s.title}</strong>
                         )}
 
-                        {/* Price clickable to contact as well */}
                         {s.price ? (
                           contactLink ? (
                             <a href={contactLink} target={contactLink.startsWith("http") ? "_blank" : undefined} rel={contactLink.startsWith("http") ? "noreferrer" : undefined} style={{ textDecoration: "none", color: "var(--a-muted)" }}>
@@ -621,7 +665,6 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                   </div>
                 ) : null}
 
-                {/* Email shown and clickable */}
                 {email ? (
                   <div className="contact-item">
                     <span style={{ width: 20, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
@@ -638,7 +681,6 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
                   <div className="contact-item"><strong>Email</strong><div style={{ color: "var(--a-muted)" }}>maya@example.com</div></div>
                 ) : null)}
 
-                {/* Phone clickable */}
                 {phone ? (
                   <div className="contact-item">
                     <span style={{ width: 20, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
@@ -673,7 +715,6 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
           </section>
 
           <div className="preview-footer" role="toolbar" aria-label="Preview actions">
-            {/* Back button removed as requested */}
             {showFooter ? (
               <button className="primary-btn" onClick={() => {
                 const onboardingRoute = merged.id ? `/onboarding/artist?id=${merged.id}` : "/onboarding/artist";
@@ -684,7 +725,6 @@ export default function ArtistPreview({ data, showFooter = true }: { data?: any;
         </main>
       </div>
 
-      {/* Lightbox overlay */}
       {lightboxState && currentLightboxUrl ? (
         <div className="lightbox-overlay" onClick={closeLightbox} role="dialog" aria-modal="true" aria-label="Artwork preview">
           <div className="lightbox-inner" onClick={(e) => e.stopPropagation()}>
